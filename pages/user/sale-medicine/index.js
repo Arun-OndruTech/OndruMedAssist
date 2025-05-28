@@ -91,7 +91,7 @@ const AddItem = () => {
 
 
 
-        axios.post(process.env.DB + `/Medicine/${!emergency ? `${checked ? 'whole_sale' : 'partial_sale'}` : 'whole_sale'}`, (emergency ? (checked ? { uid: auth.currentUser.uid, ...value, type: "sale", date: getCurrentDate() } : { uid: auth.currentUser.uid, ...value, remove_quantity: quantity, type: "sale", date: getCurrentDate() }) : { uid: auth.currentUser.uid, ...value, type: "sale", date: getCurrentDate() }))
+        axios.post(process.env.NEXT_PUBLIC_API_URL + `/Medicine/${!emergency ? `${checked ? 'whole_sale' : 'partial_sale'}` : 'whole_sale'}`, (emergency ? (checked ? { uid: auth.currentUser.uid, ...value, type: "sale", date: getCurrentDate() } : { uid: auth.currentUser.uid, ...value, remove_quantity: quantity, type: "sale", date: getCurrentDate() }) : { uid: auth.currentUser.uid, ...value, type: "sale", date: getCurrentDate() }))
             .then((res) => {
                 // open pop up with specific message
                 dispatch({

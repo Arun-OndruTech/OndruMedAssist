@@ -75,7 +75,7 @@ const AddItem = () => {
 
 
 
-        axios.post(process.env.DB + `/Medicine/${checked ? 'whole_remove' : 'partial_remove'}`, (checked ? { uid: auth.currentUser.uid, ...value, type: "remove" } : { uid: auth.currentUser.uid, ...value, remove_quantity: quantity, type: "remove" }))
+        axios.post(process.env.NEXT_PUBLIC_API_URL + `/Medicine/${checked ? 'whole_remove' : 'partial_remove'}`, (checked ? { uid: auth.currentUser.uid, ...value, type: "remove" } : { uid: auth.currentUser.uid, ...value, remove_quantity: quantity, type: "remove" }))
             .then((res) => {
                 // open pop up with specific message
                 dispatch({
