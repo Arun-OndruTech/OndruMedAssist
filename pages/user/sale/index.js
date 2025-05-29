@@ -1,18 +1,18 @@
-import classes from './sale.module.css';
+import classes from "./sale.module.css";
 import Navbar from "../../../Components/subNavbar/navbar";
-import Head from 'next/head';
-import DataTable from '../../../Components/DataTabel/DataTabel';
-import Button from '@mui/material/Button';
-import axios from 'axios';
-import { useRouter } from 'next/router';
-import { useContext, useEffect, useState } from 'react';
-import { auth } from '../../../firebase/firebase';
-import { StateContext } from '../../../Context/StateContext';
-import SnackbarTag from '../../../Components/Snackbar/Snackbar';
-import { columns_sale } from '../../../Components/DataTabel/Sales/Column';
-import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
-import { TextField, Grid, Card, CardContent, Typography } from '@mui/material';
-import { 
+import Head from "next/head";
+import DataTable from "../../../Components/DataTabel/DataTabel";
+import Button from "@mui/material/Button";
+import axios from "axios";
+import { useRouter } from "next/router";
+import { useContext, useEffect, useState } from "react";
+import { auth } from "../../../firebase/firebase";
+import { StateContext } from "../../../Context/StateContext";
+import SnackbarTag from "../../../Components/Snackbar/Snackbar";
+import { columns_sale } from "../../../Components/DataTabel/Sales/Column";
+import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
+import { TextField, Grid, Card, CardContent, Typography } from "@mui/material";
+import {
   Dialog,
   DialogTitle,
   DialogContent,
@@ -24,85 +24,138 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Box
-} from '@mui/material';
-import PrintIcon from '@mui/icons-material/Print';
-import DownloadIcon from '@mui/icons-material/Download';
+  Box,
+  IconButton,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import PrintIcon from "@mui/icons-material/Print";
+import DownloadIcon from "@mui/icons-material/Download";
 
 const Sales = () => {
   const router = useRouter();
   const [medicineData, setMedicineData] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [cart, setCart] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState("");
   const [showOrderSummary, setShowOrderSummary] = useState(false);
   const { state, dispatch } = useContext(StateContext);
 
   useEffect(() => {
     // Fetch available medicines
-    axios.post('/api/Medicine/fetch', { uid: auth.currentUser.uid })
+    axios
+      .post("/api/Medicine/fetch", { uid: auth.currentUser.uid })
       .then((res) => {
-        setInventory(res.data.stock || []);
+        setInventory(res.data.stock.filter((med) => med.quantity > 0));
+
         setMedicineData(res.data.sales || []);
       })
-      .catch(err => {
-        dispatch({ 
-          type: 'show popup', 
-          payload: { msg: 'Failed to fetch inventory', type: 'error' } 
+      .catch((err) => {
+        dispatch({
+          type: "show popup",
+          payload: { msg: "Failed to fetch inventory", type: "error" },
         });
       });
   }, []);
 
   const handleAddToCart = (medicine) => {
-    const existingItem = cart.find(item => item.name === medicine.name);
+    const existingItem = cart.find((item) => item._id === medicine._id);
+    const stockItem = inventory.find((inv) => inv._id === medicine._id);
+
+    if (!stockItem || stockItem.quantity <= 0) {
+      dispatch({
+        type: "show popup",
+        payload: {
+          msg: `No stock available for ${medicine.name}.`,
+          type: "error",
+        },
+      });
+      return;
+    }
+
+    // Add or update cart item
     if (existingItem) {
-      setCart(cart.map(item => 
-        item.name === medicine.name 
-          ? { ...item, quantity: item.quantity + 1 } 
-          : item
-      ));
+      setCart(
+        cart.map((item) =>
+          item._id === medicine._id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      );
     } else {
       setCart([...cart, { ...medicine, quantity: 1 }]);
     }
+
+    // Decrease inventory count
+    setInventory(
+      inventory.map((item) =>
+        item._id === medicine._id
+          ? { ...item, quantity: item.quantity - 1 }
+          : item
+      )
+    );
   };
 
   const handleCheckout = async () => {
+    const invalidItems = cart.filter((cartItem) => {
+      const stockItem = inventory.find((inv) => inv._id === cartItem._id);
+      return !stockItem || cartItem.quantity > stockItem.quantity;
+    });
+
+    if (invalidItems.length > 0) {
+      const itemNames = invalidItems.map((item) => item.name).join(", ");
+      dispatch({
+        type: "show popup",
+        payload: {
+          msg: `Insufficient stock for: ${itemNames}`,
+          type: "error",
+        },
+      });
+      return;
+    }
+
     setShowPaymentDialog(true);
   };
 
   const handlePaymentSubmit = async (method) => {
     try {
-      const sales = cart.map(item => ({
+      const sales = cart.map((item) => ({
         uid: auth.currentUser.uid,
         _id: item._id,
         quantity: item.quantity,
         name: item.name,
-        type: 'sale',
+        type: "sale",
         uploadOn: new Date().toISOString(),
         price: item.price,
-        date: new Date().toISOString()
+        date: new Date().toISOString(),
       }));
 
       // Make API calls for each item in the cart
-      await Promise.all(sales.map(saleItem => 
-        axios.post('/api/Medicine/whole_sale', saleItem)
-      ));
+      await Promise.all(
+        sales.map((saleItem) =>
+          axios.post("/api/Medicine/whole_sale", saleItem)
+        )
+      );
 
       setPaymentMethod(method);
       setShowPaymentDialog(false);
       setShowOrderSummary(true);
 
-      dispatch({ 
-        type: 'show popup', 
-        payload: { msg: 'Sale completed successfully', type: 'success' } 
+      dispatch({
+        type: "show popup",
+        payload: { msg: "Sale completed successfully", type: "success" },
       });
     } catch (error) {
-      console.error('Sale error:', error);
-      dispatch({ 
-        type: 'show popup', 
-        payload: { msg: 'Failed to process sale: ' + (error.response?.data?.message || error.message), type: 'error' } 
+      console.error("Sale error:", error);
+      dispatch({
+        type: "show popup",
+        payload: {
+          msg:
+            "Failed to process sale: " +
+            (error.response?.data?.message || error.message),
+          type: "error",
+        },
       });
     }
   };
@@ -112,19 +165,19 @@ const Sales = () => {
   };
 
   const handleDownload = () => {
-    const content = document.getElementById('orderSummary');
+    const content = document.getElementById("orderSummary");
     const opt = {
       margin: 1,
       filename: `order-summary-${new Date().toISOString()}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
+      image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
     };
 
     html2pdf().set(opt).from(content).save();
   };
 
-  const filteredMedicines = inventory.filter(med => 
+  const filteredMedicines = inventory.filter((med) =>
     med.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -185,7 +238,11 @@ const Sales = () => {
                     </div>
                   ))}
                   <Typography variant="h6">
-                    Total: ₹{cart.reduce((sum, item) => sum + (item.quantity * item.price), 0)}
+                    Total: ₹
+                    {cart.reduce(
+                      (sum, item) => sum + item.quantity * item.price,
+                      0
+                    )}
                   </Typography>
                   <Button
                     variant="contained"
@@ -203,24 +260,53 @@ const Sales = () => {
         </div>
 
         {/* Payment Method Dialog */}
-        <Dialog open={showPaymentDialog} onClose={() => setShowPaymentDialog(false)}>
-          <DialogTitle>Select Payment Method</DialogTitle>
+        <Dialog
+          open={showPaymentDialog}
+          onClose={() => setShowPaymentDialog(false)}
+        >
+          <DialogTitle sx={{ m: 0, p: 2 }}>
+            Select Payment Method
+            <IconButton
+              aria-label="close"
+              onClick={() => setShowPaymentDialog(false)}
+              sx={{
+                position: "absolute",
+                right: 8,
+                top: 8,
+                color: (theme) => theme.palette.grey[500],
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
           <DialogContent>
             <DialogContentText>
               Please select your payment method:
             </DialogContentText>
-            <Button onClick={() => handlePaymentSubmit('cash')} variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+            <Button
+              onClick={() => handlePaymentSubmit("cash")}
+              variant="contained"
+              color="primary"
+              fullWidth
+              sx={{ mt: 2 }}
+            >
               Cash
             </Button>
-            <Button onClick={() => handlePaymentSubmit('card')} variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+            <Button
+              onClick={() => handlePaymentSubmit("card")}
+              variant="contained"
+              color="primary"
+              fullWidth
+              sx={{ mt: 2 }}
+            >
               Card
             </Button>
           </DialogContent>
         </Dialog>
 
         {/* Order Summary Dialog */}
-        <Dialog 
-          open={showOrderSummary} 
+        <Dialog
+          open={showOrderSummary}
           onClose={() => {
             setShowOrderSummary(false);
             setCart([]);
@@ -228,10 +314,29 @@ const Sales = () => {
           maxWidth="md"
           fullWidth
         >
-          <DialogTitle>Order Summary</DialogTitle>
+          <DialogTitle sx={{ m: 0, p: 2 }}>
+            Order Summary
+            <IconButton
+              aria-label="close"
+              onClick={() => {
+                setShowOrderSummary(false);
+                setCart([]);
+              }}
+              sx={{
+                position: "absolute",
+                right: 8,
+                top: 8,
+                color: (theme) => theme.palette.grey[500],
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
           <DialogContent>
             <div id="orderSummary">
-              <Typography variant="h6" gutterBottom>Order Details</Typography>
+              <Typography variant="h6" gutterBottom>
+                Order Details
+              </Typography>
               <Typography>Date: {new Date().toLocaleDateString()}</Typography>
               <Typography>Payment Method: {paymentMethod}</Typography>
               <TableContainer component={Paper} sx={{ mt: 2 }}>
@@ -250,22 +355,49 @@ const Sales = () => {
                         <TableCell>{item.name}</TableCell>
                         <TableCell align="right">{item.quantity}</TableCell>
                         <TableCell align="right">₹{item.price}</TableCell>
-                        <TableCell align="right">₹{item.quantity * item.price}</TableCell>
+                        <TableCell align="right">
+                          ₹{item.quantity * item.price}
+                        </TableCell>
                       </TableRow>
                     ))}
                     <TableRow>
-                      <TableCell colSpan={3} align="right"><strong>Grand Total:</strong></TableCell>
-                      <TableCell align="right"><strong>₹{cart.reduce((sum, item) => sum + (item.quantity * item.price), 0)}</strong></TableCell>
+                      <TableCell colSpan={3} align="right">
+                        <strong>Grand Total:</strong>
+                      </TableCell>
+                      <TableCell align="right">
+                        <strong>
+                          ₹
+                          {cart.reduce(
+                            (sum, item) => sum + item.quantity * item.price,
+                            0
+                          )}
+                        </strong>
+                      </TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
               </TableContainer>
             </div>
-            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-              <Button onClick={handlePrint} variant="contained" startIcon={<PrintIcon />}>
+            <Box
+              sx={{
+                mt: 2,
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 2,
+              }}
+            >
+              <Button
+                onClick={handlePrint}
+                variant="contained"
+                startIcon={<PrintIcon />}
+              >
                 Print
               </Button>
-              <Button onClick={handleDownload} variant="contained" startIcon={<DownloadIcon />}>
+              <Button
+                onClick={handleDownload}
+                variant="contained"
+                startIcon={<DownloadIcon />}
+              >
                 Download PDF
               </Button>
             </Box>
@@ -277,8 +409,8 @@ const Sales = () => {
         msg={state.popupMsg}
         type={state.popupType}
         close={(reason) => {
-          if (reason === 'clickaway') return;
-          dispatch({ type: 'close popup' });
+          if (reason === "clickaway") return;
+          dispatch({ type: "close popup" });
         }}
       />
     </>
