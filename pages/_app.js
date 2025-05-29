@@ -1,14 +1,13 @@
-import '../styles/globals.css'
-import Home from '.';
-import TopLayout from '../Components/TopLayout/TopLayout';
-import login from './login';
-import SignUp from './signup';
-import SideLayout from '../Components/SideLayout/SideLayout';
-import AuthProvider from '../firebase/Context/AuthContext';
-import ProtectedRoute from '../Components/ProtectedRoute/ProtectedRoute';
-import AlreadyLogin from '../Components/AlreadyLogin/AlreadyLogin';
-import { StateContextProvider } from '../Context/StateContext';
-
+import "../styles/globals.css";
+import Home from ".";
+import TopLayout from "../Components/TopLayout/TopLayout";
+import login from "./login";
+import SignUp from "./signup";
+import SideLayout from "../Components/SideLayout/SideLayout";
+import AuthProvider from "../firebase/Context/AuthContext";
+import ProtectedRoute from "../Components/ProtectedRoute/ProtectedRoute";
+import AlreadyLogin from "../Components/AlreadyLogin/AlreadyLogin";
+import { StateContextProvider } from "../Context/StateContext";
 
 function MyApp({ Component, pageProps }) {
   switch (Component) {
@@ -25,7 +24,7 @@ function MyApp({ Component, pageProps }) {
         </AuthProvider>
       );
     }
-    case (login):
+    case login:
       return (
         <AuthProvider>
           <StateContextProvider>
@@ -35,7 +34,7 @@ function MyApp({ Component, pageProps }) {
           </StateContextProvider>
         </AuthProvider>
       );
-    case (SignUp):
+    case SignUp:
       return (
         <AuthProvider>
           <StateContextProvider>
@@ -56,8 +55,8 @@ function MyApp({ Component, pageProps }) {
             </ProtectedRoute>
           </StateContextProvider>
         </AuthProvider>
-      )
+      );
   }
 }
 
-export default MyApp
+export default MyApp;
