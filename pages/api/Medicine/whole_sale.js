@@ -9,44 +9,47 @@ export default async function handler(req, res) {
   try {
     await connectMongo();
 
-    const { uid, _id, name, quantity, price, type, uploadOn, date } = req.body;
+    const { uid, sales } = req.body;
 
-    // 1. Find the user
     const user = await User.findById(uid);
     if (!user) return res.status(404).json({ msg: "User not found" });
 
-    // 2. Update inventory (reduce quantity)
-    const stockItem = user.stock.find((item) => item._id.toString() === _id);
+    let totalAmount = 0;
 
-    if (!stockItem)
-      return res.status(404).json({ msg: "Medicine not found in stock" });
+    for (const sale of sales) {
+      const { _id, name, quantity, price, type, uploadOn, date } = sale;
 
-    if (stockItem.quantity < quantity) {
-      return res.status(400).json({ msg: "Not enough quantity in stock" });
+      const stockItem = user.stock.find((item) => item._id.toString() === _id);
+
+      if (!stockItem) {
+        return res.status(404).json({ msg: `Medicine ${name} not found` });
+      }
+
+      if (stockItem.quantity < quantity) {
+        return res.status(400).json({ msg: `Not enough stock for ${name}` });
+      }
+
+      stockItem.quantity -= quantity;
+
+      const saleEntry = {
+        name,
+        quantity,
+        price,
+        type,
+        uploadOn,
+        amount: quantity * price,
+        updateon: uploadOn,
+      };
+
+      user.history.unshift(saleEntry);
+      totalAmount += quantity * price;
     }
 
-    stockItem.quantity -= quantity;
+    user.totalSale = (user.totalSale || 0) + totalAmount;
 
-    // 3. Add to history
-    const saleEntry = {
-      name,
-      quantity,
-      price,
-      type,
-      uploadOn,
-      amount: quantity * price,
-      updateon: uploadOn,
-    };
-
-    user.history.unshift(saleEntry);
-
-    // 4. Increase totalSale
-    user.totalSale = (user.totalSale || 0) + quantity * price;
-
-    // 5. Save changes
     await user.save();
 
-    res.status(200).json({ msg: "Sale recorded and stock updated" });
+    res.status(200).json({ msg: "All sales recorded successfully" });
   } catch (error) {
     console.error(error);
     res
