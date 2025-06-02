@@ -78,6 +78,12 @@ export default function Navbar() {
               {!collapsed && <span>Sale</span>}
             </Link>
           </li>
+          <li page="orders">
+            <Link href="/dashboard/orders">
+              <FaFileInvoice />
+              {!collapsed && <span>Order Summary</span>}
+            </Link>
+          </li>
           <li className={classes.noti} page="notification">
             <Link href="/user/notification">
               <FaBell />

@@ -17,6 +17,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogContentText,
+  DialogActions,
   Table,
   TableBody,
   TableCell,
@@ -39,8 +40,13 @@ const Sales = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("");
-  const [showOrderSummary, setShowOrderSummary] = useState(false);
   const { state, dispatch } = useContext(StateContext);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+
+  // --- NEW: State for invoice dialog ---
+  const [open, setOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   useEffect(() => {
     // Fetch available medicines
@@ -48,7 +54,6 @@ const Sales = () => {
       .post("/api/Medicine/fetch", { uid: auth.currentUser.uid })
       .then((res) => {
         setInventory(res.data.stock.filter((med) => med.quantity > 0));
-
         setMedicineData(res.data.sales || []);
       })
       .catch((err) => {
@@ -61,8 +66,20 @@ const Sales = () => {
 
   const handleAddToCart = (medicine) => {
     const existingItem = cart.find((item) => item._id === medicine._id);
-    const stockItem = inventory.find((inv) => inv._id === medicine._id);
 
+    if (medicine.quantity <= 0) {
+      dispatch({
+        type: "show popup",
+        payload: {
+          msg: `No stock available for ${medicine.name}.`,
+          type: "error",
+        },
+      });
+      return;
+    }
+
+    // Find the stock item from inventory
+    const stockItem = inventory.find((item) => item._id === medicine._id);
     if (!stockItem || stockItem.quantity <= 0) {
       dispatch({
         type: "show popup",
@@ -74,7 +91,20 @@ const Sales = () => {
       return;
     }
 
-    // Add or update cart item
+    // Check if quantity in cart exceeds available stock
+    const totalInCart = existingItem ? existingItem.quantity + 1 : 1;
+    if (totalInCart > stockItem.quantity) {
+      dispatch({
+        type: "show popup",
+        payload: {
+          msg: `Only ${stockItem.quantity} items available for ${medicine.name}.`,
+          type: "error",
+        },
+      });
+      return;
+    }
+
+    // Update the cart
     if (existingItem) {
       setCart(
         cart.map((item) =>
@@ -87,7 +117,7 @@ const Sales = () => {
       setCart([...cart, { ...medicine, quantity: 1 }]);
     }
 
-    // Decrease inventory count
+    // Decrease the quantity in inventory
     setInventory(
       inventory.map((item) =>
         item._id === medicine._id
@@ -98,26 +128,17 @@ const Sales = () => {
   };
 
   const handleCheckout = async () => {
-    const invalidItems = cart.filter((cartItem) => {
-      const stockItem = inventory.find((inv) => inv._id === cartItem._id);
-      return !stockItem || cartItem.quantity > stockItem.quantity;
-    });
-
-    if (invalidItems.length > 0) {
-      const itemNames = invalidItems.map((item) => item.name).join(", ");
+    if (cart.length === 0) {
       dispatch({
         type: "show popup",
-        payload: {
-          msg: `Insufficient stock for: ${itemNames}`,
-          type: "error",
-        },
+        payload: { msg: "Cart is empty", type: "error" },
       });
       return;
     }
-
     setShowPaymentDialog(true);
   };
 
+  // --- MODIFIED: Show invoice dialog after sale ---
   const handlePaymentSubmit = async (method) => {
     try {
       const sales = cart.map((item) => ({
@@ -132,20 +153,58 @@ const Sales = () => {
       }));
 
       // Make API calls for each item in the cart
-      await Promise.all(
-        sales.map((saleItem) =>
-          axios.post("/api/Medicine/whole_sale", saleItem)
-        )
-      );
+      await axios.post("/api/Medicine/whole_sale", {
+        uid: auth.currentUser.uid,
+        sales,
+      });
 
       setPaymentMethod(method);
       setShowPaymentDialog(false);
-      setShowOrderSummary(true);
 
       dispatch({
         type: "show popup",
         payload: { msg: "Sale completed successfully", type: "success" },
       });
+
+      // --- Build invoice object without invoiceNumber ---
+      const invoice = {
+        // invoiceNumber will be set after backend response
+        date: new Date().toISOString(),
+        items: cart.map((item) => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.quantity * item.price,
+        })),
+        paymentMethod: method,
+        totalAmount: cart.reduce(
+          (sum, item) => sum + item.quantity * item.price,
+          0
+        ),
+        customerName,
+        customerPhone,
+      };
+
+      // Save invoice to backend and get the invoice number from response
+      const response = await axios.post("/api/Invoice/add", {
+        uid: auth.currentUser.uid,
+        invoice,
+      });
+
+      // Use the invoice number from backend response
+      const invoiceNumber =
+        response.data?.invoiceNumber ||
+        response.data?.invoice?.invoiceNumber ||
+        Math.floor(Math.random() * 1000000);
+
+      // --- Set invoice for dialog and open it ---
+      setSelectedInvoice({ ...invoice, invoiceNumber });
+      setOpen(true);
+
+      // Reset customer info and cart
+      setCustomerName("");
+      setCustomerPhone("");
+      setCart([]);
     } catch (error) {
       console.error("Sale error:", error);
       dispatch({
@@ -181,6 +240,12 @@ const Sales = () => {
     med.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // --- MODIFIED: handleClose for dialog ---
+  const handleClose = () => {
+    setOpen(false);
+    setSelectedInvoice(null);
+  };
+
   return (
     <>
       <Head>
@@ -188,7 +253,7 @@ const Sales = () => {
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
       </Head>
       <div className={classes.main_container}>
-        <Navbar title="POS Sales" />
+        <Navbar title="Sales" />
         <div className={classes.pos_container}>
           <Grid container spacing={3}>
             {/* Left side - Inventory */}
@@ -206,9 +271,57 @@ const Sales = () => {
                   <Grid item xs={4} key={medicine.name}>
                     <Card>
                       <CardContent>
-                        <Typography variant="h6">{medicine.name}</Typography>
-                        <Typography>Price: ₹{medicine.price}</Typography>
-                        <Typography>Stock: {medicine.quantity}</Typography>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: "100%",
+                            display: "block",
+                          }}
+                          title={medicine.name}
+                        >
+                          {medicine.name}
+                        </Typography>
+                        <Box display="flex" alignItems="center" mb={1}>
+                          <Box mr={1} display="flex" alignItems="center">
+                            <span role="img" aria-label="price">
+                              💰Price:
+                            </span>
+                          </Box>
+                          <Typography
+                            sx={{
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              maxWidth: "100%",
+                              display: "block",
+                            }}
+                            title={`₹${medicine.price}`}
+                          >
+                            ₹{medicine.price}
+                          </Typography>
+                        </Box>
+                        <Box display="flex" alignItems="center" mb={1}>
+                          <Box mr={1} display="flex" alignItems="center">
+                            <span role="img" aria-label="stock">
+                              📦 Stock:
+                            </span>
+                          </Box>
+                          <Typography
+                            sx={{
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              maxWidth: "100%",
+                              display: "block",
+                            }}
+                            title={medicine.quantity}
+                          >
+                            {medicine.quantity}
+                          </Typography>
+                        </Box>
                         <Button
                           variant="contained"
                           startIcon={<AddShoppingCartIcon />}
@@ -304,104 +417,86 @@ const Sales = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Order Summary Dialog */}
-        <Dialog
-          open={showOrderSummary}
-          onClose={() => {
-            setShowOrderSummary(false);
-            setCart([]);
-          }}
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle sx={{ m: 0, p: 2 }}>
-            Order Summary
-            <IconButton
-              aria-label="close"
-              onClick={() => {
-                setShowOrderSummary(false);
-                setCart([]);
-              }}
-              sx={{
-                position: "absolute",
-                right: 8,
-                top: 8,
-                color: (theme) => theme.palette.grey[500],
-              }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
+        {/* Invoice Details Dialog */}
+        <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+          <DialogTitle>Invoice Details</DialogTitle>
           <DialogContent>
-            <div id="orderSummary">
-              <Typography variant="h6" gutterBottom>
-                Order Details
-              </Typography>
-              <Typography>Date: {new Date().toLocaleDateString()}</Typography>
-              <Typography>Payment Method: {paymentMethod}</Typography>
-              <TableContainer component={Paper} sx={{ mt: 2 }}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Item</TableCell>
-                      <TableCell align="right">Quantity</TableCell>
-                      <TableCell align="right">Price</TableCell>
-                      <TableCell align="right">Total</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {cart.map((item) => (
-                      <TableRow key={item.name}>
-                        <TableCell>{item.name}</TableCell>
-                        <TableCell align="right">{item.quantity}</TableCell>
-                        <TableCell align="right">₹{item.price}</TableCell>
-                        <TableCell align="right">
-                          ₹{item.quantity * item.price}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    <TableRow>
-                      <TableCell colSpan={3} align="right">
-                        <strong>Grand Total:</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>
-                          ₹
-                          {cart.reduce(
-                            (sum, item) => sum + item.quantity * item.price,
-                            0
-                          )}
-                        </strong>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </div>
-            <Box
-              sx={{
-                mt: 2,
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 2,
-              }}
-            >
-              <Button
-                onClick={handlePrint}
-                variant="contained"
-                startIcon={<PrintIcon />}
-              >
-                Print
-              </Button>
-              <Button
-                onClick={handleDownload}
-                variant="contained"
-                startIcon={<DownloadIcon />}
-              >
-                Download PDF
-              </Button>
-            </Box>
+            {selectedInvoice && (
+              <>
+                <div id="orderSummary">
+                  <div className={classes.invoiceHeader}>
+                    <div>
+                      <h2>MedAssist Pharmacy</h2>
+                      <p>Invoice #: {selectedInvoice.invoiceNumber}</p>
+                    </div>
+                    <div className={classes.invoiceMeta}>
+                      <p>
+                        Date:{" "}
+                        {new Date(selectedInvoice.date).toLocaleDateString()}
+                      </p>
+                      <p>Payment: {selectedInvoice.paymentMethod}</p>
+                    </div>
+                  </div>
+
+                  {/* <div className={classes.customerInfo}>
+                    <h3>Customer:</h3>
+                    <p>{selectedInvoice.customerName}</p>
+                    <p>{selectedInvoice.customerPhone}</p>
+                  </div> */}
+
+                  <TableContainer component={Paper} sx={{ mt: 2 }}>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Medicine</TableCell>
+                          <TableCell align="right">Qty</TableCell>
+                          <TableCell align="right">Price</TableCell>
+                          <TableCell align="right">Total</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {selectedInvoice.items.map((item, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{item.name}</TableCell>
+                            <TableCell align="right">{item.quantity}</TableCell>
+                            <TableCell align="right">
+                              ₹{item.price.toFixed(2)}
+                            </TableCell>
+                            <TableCell align="right">
+                              ₹{item.total.toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow>
+                          <TableCell colSpan={3} align="right">
+                            <strong>Grand Total:</strong>
+                          </TableCell>
+                          <TableCell align="right">
+                            <strong>
+                              ₹{selectedInvoice.totalAmount.toFixed(2)}
+                            </strong>
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </div>
+              </>
+            )}
           </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose}>Close</Button>
+            <Button variant="contained" onClick={handlePrint}>
+              Print
+            </Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleDownload}
+            >
+              Download PDF
+            </Button>
+          </DialogActions>
         </Dialog>
       </div>
       <SnackbarTag

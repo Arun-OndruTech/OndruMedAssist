@@ -1,0 +1,45 @@
+/* .main_container {
+    padding: 20px;
+}
+
+.dataTabelContainer {
+    margin-top: 20px;
+}
+
+.invoiceHeader {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.invoiceMeta {
+    text-align: right;
+}
+
+.customerInfo {
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    .invoice-print,
+    .invoice-print * {
+        visibility: visible;
+    }
+
+    .invoice-print {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 20px;
+    }
+} */
