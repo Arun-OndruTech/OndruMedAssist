@@ -12,6 +12,11 @@ import SnackbarTag from "../../../Components/Snackbar/Snackbar";
 import { columns_sale } from "../../../Components/DataTabel/Sales/Column";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import { TextField, Grid, Card, CardContent, Typography } from "@mui/material";
+import RemoveIcon from "@mui/icons-material/Remove";
+import AddIcon from "@mui/icons-material/Add";
+import Stack from "@mui/material/Stack";
+import { v4 as uuidv4 } from "uuid";
+
 import {
   Dialog,
   DialogTitle,
@@ -31,6 +36,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import PrintIcon from "@mui/icons-material/Print";
 import DownloadIcon from "@mui/icons-material/Download";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 
 const Sales = () => {
   const router = useRouter();
@@ -42,7 +48,7 @@ const Sales = () => {
   const [paymentMethod, setPaymentMethod] = useState("");
   const { state, dispatch } = useContext(StateContext);
   const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
 
   // --- NEW: State for invoice dialog ---
   const [open, setOpen] = useState(false);
@@ -152,24 +158,17 @@ const Sales = () => {
         date: new Date().toISOString(),
       }));
 
-      // Make API calls for each item in the cart
+      // Record the sale
       await axios.post("/api/Medicine/whole_sale", {
         uid: auth.currentUser.uid,
         sales,
       });
 
-      setPaymentMethod(method);
-      setShowPaymentDialog(false);
-
-      dispatch({
-        type: "show popup",
-        payload: { msg: "Sale completed successfully", type: "success" },
-      });
-
-      // --- Build invoice object without invoiceNumber ---
+      // Build the invoice object
       const invoice = {
-        // invoiceNumber will be set after backend response
-        date: new Date().toISOString(),
+        invoiceNumber: `INV-${uuidv4()}`, // Add unique ID
+        date: new Date(),
+
         items: cart.map((item) => ({
           name: item.name,
           quantity: item.quantity,
@@ -182,28 +181,31 @@ const Sales = () => {
           0
         ),
         customerName,
-        customerPhone,
+        customerPhone: phoneNumber, // Use phoneNumber state
       };
 
-      // Save invoice to backend and get the invoice number from response
+      // Save invoice to backend
       const response = await axios.post("/api/Invoice/add", {
         uid: auth.currentUser.uid,
         invoice,
       });
 
-      // Use the invoice number from backend response
-      const invoiceNumber =
-        response.data?.invoiceNumber ||
-        response.data?.invoice?.invoiceNumber ||
-        Math.floor(Math.random() * 1000000);
+      // Get the saved invoice from response
+      const savedInvoice = response.data.invoice;
 
-      // --- Set invoice for dialog and open it ---
-      setSelectedInvoice({ ...invoice, invoiceNumber });
+      // Show success message
+      dispatch({
+        type: "show popup",
+        payload: { msg: "Sale completed successfully", type: "success" },
+      });
+
+      // Set the invoice for dialog and open it
+      setSelectedInvoice(savedInvoice);
       setOpen(true);
 
       // Reset customer info and cart
       setCustomerName("");
-      setCustomerPhone("");
+      setPhoneNumber("");
       setCart([]);
     } catch (error) {
       console.error("Sale error:", error);
@@ -287,28 +289,46 @@ const Sales = () => {
                         <Box display="flex" alignItems="center" mb={1}>
                           <Box mr={1} display="flex" alignItems="center">
                             <span role="img" aria-label="price">
-                              💰Price:
+                              💰:
                             </span>
+                            <Typography
+                              sx={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                maxWidth: "100%",
+                                display: "block",
+                                ml: 0.5,
+                              }}
+                              title={`₹${medicine.price}`}
+                            >
+                              ₹{medicine.price}
+                            </Typography>
                           </Box>
-                          <Typography
-                            sx={{
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              maxWidth: "100%",
-                              display: "block",
-                            }}
-                            title={`₹${medicine.price}`}
-                          >
-                            ₹{medicine.price}
-                          </Typography>
-                        </Box>
-                        <Box display="flex" alignItems="center" mb={1}>
-                          <Box mr={1} display="flex" alignItems="center">
+
+                          <Box ml={2} display="flex" alignItems="center">
                             <span role="img" aria-label="stock">
-                              📦 Stock:
+                              📦:
                             </span>
+                            <Typography
+                              sx={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                maxWidth: "100%",
+                                display: "block",
+                                ml: 0.5,
+                              }}
+                              title={medicine.quantity}
+                            >
+                              {medicine.quantity}
+                            </Typography>
                           </Box>
+                        </Box>
+                        <Box display="flex" alignItems="center" mt={1}>
+                          <span role="img" aria-label="expiry">
+                            ⏳:
+                          </span>
                           <Typography
                             sx={{
                               whiteSpace: "nowrap",
@@ -316,12 +336,18 @@ const Sales = () => {
                               textOverflow: "ellipsis",
                               maxWidth: "100%",
                               display: "block",
+                              ml: 0.5,
                             }}
-                            title={medicine.quantity}
+                            title={medicine.expiryDate}
                           >
-                            {medicine.quantity}
+                            {medicine.expiryDate
+                              ? new Date(
+                                  medicine.expiryDate
+                                ).toLocaleDateString()
+                              : "N/A"}
                           </Typography>
                         </Box>
+
                         <Button
                           variant="contained"
                           startIcon={<AddShoppingCartIcon />}
@@ -339,28 +365,170 @@ const Sales = () => {
             </Grid>
 
             {/* Right side - Cart */}
-            <Grid item xs={4}>
+            <Grid item xs={12} md={4}>
               <Card>
                 <CardContent>
-                  <Typography variant="h5">Shopping Cart</Typography>
-                  {cart.map((item) => (
-                    <div key={item.name} className={classes.cart_item}>
-                      <Typography>{item.name}</Typography>
-                      <Typography>Qty: {item.quantity}</Typography>
-                      <Typography>₹{item.quantity * item.price}</Typography>
-                    </div>
-                  ))}
-                  <Typography variant="h6">
-                    Total: ₹
-                    {cart.reduce(
-                      (sum, item) => sum + item.quantity * item.price,
-                      0
-                    )}
+                  <Typography variant="h5" gutterBottom>
+                    Shopping Cart
                   </Typography>
+
+                  {/* Customer Info Inputs */}
+                  <Box display="flex" gap={2} mb={2}>
+                    <TextField
+                      label="Customer Name"
+                      variant="outlined"
+                      size="small"
+                      fullWidth
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                    />
+                    <TextField
+                      label="Phone Number"
+                      variant="outlined"
+                      size="small"
+                      fullWidth
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      inputProps={{ maxLength: 10 }}
+                    />
+                  </Box>
+
+                  {/* Cart Items */}
+                  {cart.length === 0 ? (
+                    <Typography>No items in cart</Typography>
+                  ) : (
+                    <Stack spacing={2}>
+                      {cart.map((item) => (
+                        <Box
+                          key={item._id}
+                          display="flex"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          p={1.5}
+                          border="1px solid #eee"
+                          borderRadius={1}
+                          boxShadow="0 1px 3px rgba(0,0,0,0.05)"
+                        >
+                          <Box flex={1}>
+                            <Typography variant="subtitle1" noWrap>
+                              {item.name}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary">
+                              ₹{item.price} x {item.quantity} = ₹
+                              {(item.price * item.quantity).toFixed(2)}
+                            </Typography>
+                          </Box>
+
+                          {/* Quantity Controls */}
+                          <Box display="flex" alignItems="center" mx={1}>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                if (item.quantity > 1) {
+                                  setCart((prev) =>
+                                    prev.map((i) =>
+                                      i._id === item._id
+                                        ? { ...i, quantity: i.quantity - 1 }
+                                        : i
+                                    )
+                                  );
+                                  setInventory((prev) =>
+                                    prev.map((inv) =>
+                                      inv._id === item._id
+                                        ? { ...inv, quantity: inv.quantity + 1 }
+                                        : inv
+                                    )
+                                  );
+                                }
+                              }}
+                            >
+                              <RemoveCircleOutlineIcon fontSize="small" />
+                            </IconButton>
+
+                            <Typography variant="body2" mx={1}>
+                              {item.quantity}
+                            </Typography>
+
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                const stockItem = inventory.find(
+                                  (inv) => inv._id === item._id
+                                );
+                                if (item.quantity < stockItem.quantity) {
+                                  setCart((prev) =>
+                                    prev.map((i) =>
+                                      i._id === item._id
+                                        ? { ...i, quantity: i.quantity + 1 }
+                                        : i
+                                    )
+                                  );
+                                  setInventory((prev) =>
+                                    prev.map((inv) =>
+                                      inv._id === item._id
+                                        ? { ...inv, quantity: inv.quantity - 1 }
+                                        : inv
+                                    )
+                                  );
+                                } else {
+                                  dispatch({
+                                    type: "show popup",
+                                    payload: {
+                                      msg: `Only ${stockItem.quantity} items available for ${item.name}.`,
+                                      type: "error",
+                                    },
+                                  });
+                                }
+                              }}
+                            >
+                              <AddIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
+
+                          {/* Remove Button */}
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => {
+                              setCart((prev) =>
+                                prev.filter((i) => i._id !== item._id)
+                              );
+                              setInventory((prev) =>
+                                prev.map((inv) =>
+                                  inv._id === item._id
+                                    ? {
+                                        ...inv,
+                                        quantity: inv.quantity + item.quantity,
+                                      }
+                                    : inv
+                                )
+                              );
+                            }}
+                          >
+                            <RemoveIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Stack>
+                  )}
+
+                  {/* Total Price */}
+                  <Typography variant="h6" mt={3}>
+                    Total: ₹
+                    {cart
+                      .reduce(
+                        (sum, item) => sum + item.quantity * item.price,
+                        0
+                      )
+                      .toFixed(2)}
+                  </Typography>
+
+                  {/* Checkout Button */}
                   <Button
                     variant="contained"
                     color="primary"
                     fullWidth
+                    sx={{ mt: 2 }}
                     onClick={handleCheckout}
                     disabled={cart.length === 0}
                   >
@@ -426,7 +594,7 @@ const Sales = () => {
                 <div id="orderSummary">
                   <div className={classes.invoiceHeader}>
                     <div>
-                      <h2>MedAssist Pharmacy</h2>
+                      <h2>OndruAssist Pharmacy</h2>
                       <p>Invoice #: {selectedInvoice.invoiceNumber}</p>
                     </div>
                     <div className={classes.invoiceMeta}>
@@ -438,11 +606,11 @@ const Sales = () => {
                     </div>
                   </div>
 
-                  {/* <div className={classes.customerInfo}>
+                  <div className={classes.customerInfo}>
                     <h3>Customer:</h3>
                     <p>{selectedInvoice.customerName}</p>
                     <p>{selectedInvoice.customerPhone}</p>
-                  </div> */}
+                  </div>
 
                   <TableContainer component={Paper} sx={{ mt: 2 }}>
                     <Table>

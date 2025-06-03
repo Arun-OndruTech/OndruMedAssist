@@ -114,7 +114,7 @@ const Orders = () => {
             <>
               <div className={classes.invoiceHeader}>
                 <div>
-                  <h2>MedAssist Pharmacy</h2>
+                  <h2>OndruAssist Pharmacy</h2>
                   <p>Invoice #: {selectedInvoice.invoiceNumber}</p>
                 </div>
                 <div className={classes.invoiceMeta}>
