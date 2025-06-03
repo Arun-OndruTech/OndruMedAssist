@@ -37,8 +37,8 @@ export default async function handler(req, res) {
       });
     }
 
-    // Generate invoice
     const invoiceNumber = `INV-${Date.now()}-${uuidv4().slice(0, 4)}`;
+    // Generate invoice
     const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
 
     const invoice = {

@@ -29,7 +29,8 @@
         "react-circular-progressbar": "^2.1.0",
         "react-dom": "18.2.0",
         "react-icons": "^4.6.0",
-        "recharts": "^2.1.16"
+        "recharts": "^2.1.16",
+        "uuid": "^11.1.0"
     },
     "devDependencies": {
         "eslint": "8.26.0",

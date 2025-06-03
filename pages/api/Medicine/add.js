@@ -18,7 +18,8 @@ export default async function add(req, res) {
     await connectMongo();
 
     // fetch data
-    const { uid, name, quantity, price, expiryDate, uploadOn } = req.body;
+    const { uid, name, quantity, price, expiryDate, uploadOn, vendorName } =
+      req.body;
     // console.log(req.body);
 
     // find appropiate user for the addition
@@ -32,6 +33,7 @@ export default async function add(req, res) {
             price,
             expiryDate,
             uploadOn,
+            vendorName,
           },
         },
       },
@@ -49,6 +51,7 @@ export default async function add(req, res) {
             total_quantity: quantity,
             updateon: uploadOn,
             type: "add",
+            vendorName,
           };
           console.log(current_total_purchase + quantity * price);
 

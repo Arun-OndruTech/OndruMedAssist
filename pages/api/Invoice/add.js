@@ -1,5 +1,7 @@
 import connectMongo from "../../../utils/connectMongo";
 import User from "../../../Models/user";
+import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 
 export default async function handler(req, res) {
   try {
@@ -10,9 +12,13 @@ export default async function handler(req, res) {
     if (!user) return res.status(404).json({ msg: "User not found" });
 
     // Generate unique invoice number (INV-YYYYMMDD-XXXX)
+    // const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    // const randomPart = Math.floor(1000 + Math.random() * 9000);
+    // invoice.invoiceNumber = `INV-${randomUUID()}`;
+    // Generate invoice number like INV-20250603-83c9fbc9
     const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    const randomPart = Math.floor(1000 + Math.random() * 9000);
-    invoice.invoiceNumber = `INV-${datePart}-${randomPart}`;
+    const uniquePart = randomUUID().split("-")[0]; // short, readable
+    invoice.invoiceNumber = `INV-${uniquePart}-${datePart}`;
 
     // Ensure required fields are set
     invoice.uid = uid;
