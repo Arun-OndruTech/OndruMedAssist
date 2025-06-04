@@ -16,6 +16,7 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import AddIcon from "@mui/icons-material/Add";
 import Stack from "@mui/material/Stack";
 import { v4 as uuidv4 } from "uuid";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 import {
   Dialog,
@@ -72,34 +73,12 @@ const Sales = () => {
 
   const handleAddToCart = (medicine) => {
     const existingItem = cart.find((item) => item._id === medicine._id);
-
-    if (medicine.quantity <= 0) {
-      dispatch({
-        type: "show popup",
-        payload: {
-          msg: `No stock available for ${medicine.name}.`,
-          type: "error",
-        },
-      });
-      return;
-    }
-
-    // Find the stock item from inventory
     const stockItem = inventory.find((item) => item._id === medicine._id);
-    if (!stockItem || stockItem.quantity <= 0) {
-      dispatch({
-        type: "show popup",
-        payload: {
-          msg: `No stock available for ${medicine.name}.`,
-          type: "error",
-        },
-      });
-      return;
-    }
 
-    // Check if quantity in cart exceeds available stock
-    const totalInCart = existingItem ? existingItem.quantity + 1 : 1;
-    if (totalInCart > stockItem.quantity) {
+    // Calculate how many are already in the cart
+    const cartQty = existingItem ? existingItem.quantity : 0;
+    // Maximum allowed is stockItem.quantity
+    if (cartQty >= stockItem.quantity) {
       dispatch({
         type: "show popup",
         payload: {
@@ -110,7 +89,6 @@ const Sales = () => {
       return;
     }
 
-    // Update the cart
     if (existingItem) {
       setCart(
         cart.map((item) =>
@@ -122,15 +100,6 @@ const Sales = () => {
     } else {
       setCart([...cart, { ...medicine, quantity: 1 }]);
     }
-
-    // Decrease the quantity in inventory
-    setInventory(
-      inventory.map((item) =>
-        item._id === medicine._id
-          ? { ...item, quantity: item.quantity - 1 }
-          : item
-      )
-    );
   };
 
   const handleCheckout = async () => {
@@ -166,9 +135,8 @@ const Sales = () => {
 
       // Build the invoice object
       const invoice = {
-        invoiceNumber: `INV-${uuidv4()}`, // Add unique ID
+        invoiceNumber: `INV-${uuidv4()}`,
         date: new Date(),
-
         items: cart.map((item) => ({
           name: item.name,
           quantity: item.quantity,
@@ -181,7 +149,7 @@ const Sales = () => {
           0
         ),
         customerName,
-        customerPhone: phoneNumber, // Use phoneNumber state
+        customerPhone: phoneNumber,
       };
 
       // Save invoice to backend
@@ -207,6 +175,9 @@ const Sales = () => {
       setCustomerName("");
       setPhoneNumber("");
       setCart([]);
+
+      // --- Move this here so the payment dialog closes after invoice is shown ---
+      setShowPaymentDialog(false);
     } catch (error) {
       console.error("Sale error:", error);
       dispatch({
@@ -409,8 +380,22 @@ const Sales = () => {
                           borderRadius={1}
                           boxShadow="0 1px 3px rgba(0,0,0,0.05)"
                         >
-                          <Box flex={1}>
-                            <Typography variant="subtitle1" noWrap>
+                          <Box
+                            flex={1}
+                            sx={{ minWidth: 0, overflow: "hidden" }}
+                          >
+                            <Typography
+                              variant="subtitle1"
+                              noWrap
+                              sx={{
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                maxWidth: "100%",
+                                display: "block",
+                              }}
+                              title={item.name}
+                            >
                               {item.name}
                             </Typography>
                             <Typography variant="body2" color="textSecondary">
@@ -430,13 +415,6 @@ const Sales = () => {
                                       i._id === item._id
                                         ? { ...i, quantity: i.quantity - 1 }
                                         : i
-                                    )
-                                  );
-                                  setInventory((prev) =>
-                                    prev.map((inv) =>
-                                      inv._id === item._id
-                                        ? { ...inv, quantity: inv.quantity + 1 }
-                                        : inv
                                     )
                                   );
                                 }
@@ -461,13 +439,6 @@ const Sales = () => {
                                       i._id === item._id
                                         ? { ...i, quantity: i.quantity + 1 }
                                         : i
-                                    )
-                                  );
-                                  setInventory((prev) =>
-                                    prev.map((inv) =>
-                                      inv._id === item._id
-                                        ? { ...inv, quantity: inv.quantity - 1 }
-                                        : inv
                                     )
                                   );
                                 } else {
@@ -505,7 +476,7 @@ const Sales = () => {
                               );
                             }}
                           >
-                            <RemoveIcon fontSize="small" />
+                            <DeleteIcon fontSize="small" />
                           </IconButton>
                         </Box>
                       ))}

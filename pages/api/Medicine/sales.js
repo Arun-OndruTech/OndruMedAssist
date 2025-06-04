@@ -2,6 +2,9 @@
 import { v4 as uuidv4 } from "uuid";
 import User from "../../../Models/user";
 
+// ...existing imports...
+import connectMongo from "../../../utils/connectMongo"; // Make sure you have this import
+
 export default async function handler(req, res) {
   try {
     await connectMongo();
@@ -12,6 +15,7 @@ export default async function handler(req, res) {
 
     let totalAmount = 0;
     let items = [];
+    let salesToPush = [];
 
     // Process each sale item
     for (const sale of sales) {
@@ -34,6 +38,16 @@ export default async function handler(req, res) {
         quantity,
         unitPrice: price,
         totalPrice: quantity * price,
+      });
+
+      // --- Add to sales array ---
+      salesToPush.push({
+        name,
+        quantity,
+        price,
+        date: new Date(), // <-- Make sure date is set!
+        type: "sale",
+        medicineId: _id,
       });
     }
 
@@ -58,8 +72,12 @@ export default async function handler(req, res) {
 
     // Update user with invoice and sales data
     user.invoices.unshift(invoice);
-    user.markModified("invoices"); // ← Important!
+    user.markModified("invoices");
     user.totalSale = (user.totalSale || 0) + invoice.totalAmount;
+
+    // --- Push sales to user.sales array ---
+    user.sales = [...salesToPush, ...user.sales];
+    user.markModified("sales");
 
     await user.save();
 

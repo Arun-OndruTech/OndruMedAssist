@@ -53,7 +53,7 @@ export default function Widget({ type, amount }) {
           />
         ),
         link: "Sales Detail",
-        dest: "sale",
+        dest: "orders",
         pin: (
           <FiberManualRecordIcon
             className={classes.icon2}
