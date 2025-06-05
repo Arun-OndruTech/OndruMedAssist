@@ -9,9 +9,9 @@ export const columns = [
   {
     id: "total_quantity",
     field: "total_quantity",
-    headerName: "Available Quantity",
+    headerName: "Quantity",
     type: "number",
-    width: 250,
+    width: 120,
   },
   {
     id: "updateon",

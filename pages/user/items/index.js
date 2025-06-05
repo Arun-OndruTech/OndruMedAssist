@@ -42,7 +42,7 @@ const Items = () => {
                                 Add
                             </Button>
                         </div> */}
-            <div className={classes.btn}>
+            {/* <div className={classes.btn}>
               <Button
                 startIcon={<DeleteIcon />}
                 fullWidth={true}
@@ -52,7 +52,7 @@ const Items = () => {
               >
                 Remove
               </Button>
-            </div>
+            </div> */}
           </div>
           {medicineData.length !== 0 ? (
             <DataTable data={medicineData} col={columns} />

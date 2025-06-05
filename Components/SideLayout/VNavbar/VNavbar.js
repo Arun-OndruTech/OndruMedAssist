@@ -80,11 +80,11 @@ export default function Navbar() {
           </li>
           <li page="orders">
             <Link href="/dashboard/orders">
-              <FaFileInvoice />
+              <FaBell />
               {!collapsed && <span>Order Summary</span>}
             </Link>
           </li>
-          <li className={classes.noti} page="notification">
+          {/* <li className={classes.noti} page="notification">
             <Link href="/user/notification">
               <FaBell />
               {!collapsed && <span>Notification</span>}
@@ -96,7 +96,7 @@ export default function Navbar() {
                   : state.number_of_notifications}
               </span>
             )}
-          </li>
+          </li> */}
         </ul>
       </nav>
     </main>

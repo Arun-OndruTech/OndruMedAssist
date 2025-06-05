@@ -135,10 +135,9 @@ const Orders = () => {
       <div className={classes.main_container}>
         <Navbar title="Orders" />
 
-        {/* Search Section */}
         <div className={classes.searchContainer}>
           <div className={classes.filterBox}>
-            <FormControl fullWidth>
+            <FormControl fullWidth size="small">
               <InputLabel>Search By</InputLabel>
               <Select
                 value={filterType}
@@ -159,11 +158,11 @@ const Orders = () => {
               fullWidth
               value={searchQuery}
               onChange={handleSearch}
+              size="small"
             />
           </div>
         </div>
 
-        {/* Table Section */}
         <div className={classes.dataTabelContainer}>
           {filteredInvoices.length > 0 ? (
             <DataTable data={filteredInvoices} col={columns} />
