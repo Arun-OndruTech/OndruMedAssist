@@ -11,7 +11,6 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogContentText,
   DialogActions,
   Table,
   TableBody,
@@ -20,12 +19,20 @@ import {
   TableHead,
   TableRow,
   Paper,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 
 const Orders = () => {
   const [invoices, setInvoices] = useState([]);
+  const [filteredInvoices, setFilteredInvoices] = useState([]);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState("all");
   const { state, dispatch } = useContext(StateContext);
 
   useEffect(() => {
@@ -35,6 +42,7 @@ const Orders = () => {
           uid: auth.currentUser.uid,
         });
         setInvoices(response.data);
+        setFilteredInvoices(response.data);
       } catch (error) {
         console.error("Fetch invoices error:", error);
         dispatch({
@@ -58,15 +66,44 @@ const Orders = () => {
     setOpen(false);
   };
 
+  const handleSearch = (e) => {
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
+
+    const filtered = invoices.filter((inv) => {
+      if (filterType === "name") {
+        return inv.customerName.toLowerCase().includes(query);
+      } else if (filterType === "invoice") {
+        return inv.invoiceNumber.toLowerCase().includes(query);
+      } else if (filterType === "date") {
+        return new Date(inv.date).toLocaleDateString().includes(query);
+      } else {
+        return (
+          inv.customerName.toLowerCase().includes(query) ||
+          inv.invoiceNumber.toLowerCase().includes(query) ||
+          new Date(inv.date).toLocaleDateString().includes(query)
+        );
+      }
+    });
+
+    setFilteredInvoices(filtered);
+  };
+
+  const handleFilterChange = (e) => {
+    setFilterType(e.target.value);
+    setSearchQuery("");
+    setFilteredInvoices(invoices); // Reset search on filter change
+  };
+
   const columns = [
-    { field: "invoiceNumber", headerName: "Invoice #", width: 180 },
+    { field: "invoiceNumber", headerName: "Invoice #", width: 280 },
     {
       field: "date",
       headerName: "Date",
       width: 150,
       valueFormatter: (params) => new Date(params.value).toLocaleDateString(),
     },
-    { field: "customerName", headerName: "Customer", width: 150 },
+    { field: "customerName", headerName: "Customer", width: 200 },
     {
       field: "totalAmount",
       headerName: "Amount",
@@ -97,16 +134,46 @@ const Orders = () => {
       </Head>
       <div className={classes.main_container}>
         <Navbar title="Orders" />
+
+        {/* Search Section */}
+        <div className={classes.searchContainer}>
+          <div className={classes.filterBox}>
+            <FormControl fullWidth>
+              <InputLabel>Search By</InputLabel>
+              <Select
+                value={filterType}
+                label="Search By"
+                onChange={handleFilterChange}
+              >
+                <MenuItem value="all">All</MenuItem>
+                <MenuItem value="name">Customer Name</MenuItem>
+                <MenuItem value="invoice">Invoice Number</MenuItem>
+                <MenuItem value="date">Date</MenuItem>
+              </Select>
+            </FormControl>
+          </div>
+          <div className={classes.searchBox}>
+            <TextField
+              label="Search"
+              variant="outlined"
+              fullWidth
+              value={searchQuery}
+              onChange={handleSearch}
+            />
+          </div>
+        </div>
+
+        {/* Table Section */}
         <div className={classes.dataTabelContainer}>
-          {invoices.length > 0 ? (
-            <DataTable data={invoices} col={columns} />
+          {filteredInvoices.length > 0 ? (
+            <DataTable data={filteredInvoices} col={columns} />
           ) : (
             <h2 style={{ opacity: ".5" }}>No orders found</h2>
           )}
         </div>
       </div>
 
-      {/* Invoice Details Dialog */}
+      {/* Invoice Dialog */}
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle>Invoice Details</DialogTitle>
         <DialogContent>

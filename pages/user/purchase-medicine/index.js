@@ -16,11 +16,17 @@ import { StateContext } from "../../../Context/StateContext";
 import AlertDialog from "../../../Components/AlertDialog/AlertDialog";
 import Head from "next/head";
 
-const AddItem = () => {
-  // context
-  const { state, dispatch } = useContext(StateContext);
+// Prevent non-numeric and negative inputs
+const blockInvalidChar = (e) => {
+  if (["e", "E", "+", "-"].includes(e.key)) {
+    e.preventDefault();
+  }
+};
 
-  // state
+const AddItem = () => {
+  const { state, dispatch } = useContext(StateContext);
+  const router = useRouter();
+
   const [value, setValue] = useState(dayjs(convertDate(getCurrentDate())));
   const [data, setData] = useState({
     name: "",
@@ -29,45 +35,33 @@ const AddItem = () => {
     vendorName: "",
   });
 
-  // router
-  const router = useRouter();
-
-  // change state of date to user selected date
   const handleChange = (newValue) => {
     setValue(newValue);
   };
 
-  // update state values
   const changeHandle = (e) => {
-    const element = e.target.getAttribute("id");
+    const element = e.target.id;
     setData((current) => ({ ...current, [element]: e.target.value }));
   };
 
-  // close the alert
   const closeAlert = () => {
     dispatch({ type: "close alert" });
     router.replace("/user/items");
   };
 
-  // handle submit
   const handleSubmit = (e) => {
     e.preventDefault();
+
     let currentDate = new Date();
-    const ex_date = `${value.year()}-${
-      value.month() > 9 ? value.month() : `0${value.month()}`
-    }-${value.date() > 9 ? value.date() : `0${value.date()}`} `;
-    const cu_date = `${currentDate.getFullYear()}-${
-      currentDate.getMonth() > 9
-        ? currentDate.getMonth()
-        : `0${currentDate.getMonth()}`
-    }-${
-      currentDate.getDate() > 9
-        ? currentDate.getDate()
-        : `0${currentDate.getDate()}`
-    } `;
+    const ex_date = `${value.year()}-${(value.month() + 1)
+      .toString()
+      .padStart(2, "0")}-${value.date().toString().padStart(2, "0")}`;
+    const cu_date = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}-${currentDate.getDate().toString().padStart(2, "0")}`;
+
     const expiryDate = new Date(ex_date);
 
-    // if medicine is not expiyred this part of code is run
     if (expiryDate > currentDate) {
       axios
         .post(process.env.NEXT_PUBLIC_API_URL + "/Medicine/add", {
@@ -76,9 +70,7 @@ const AddItem = () => {
           expiryDate: ex_date,
           uploadOn: cu_date,
         })
-
         .then((res) => {
-          // open pop up with specific message
           dispatch({
             type: "open popup",
             playload: {
@@ -86,27 +78,23 @@ const AddItem = () => {
               type: "success",
             },
           });
-
-          // route to items page when medicine was added
           router.replace("/user/purchase");
         })
         .catch((err) => {
           dispatch({
             type: "open popup",
             playload: {
-              msg: err,
+              msg: err.message || "Something went wrong",
               type: "error",
             },
           });
         });
-    }
-    // if medicine is already expiyred this part of code is run
-    else {
+    } else {
       dispatch({
         type: "open alert",
         playload: {
           title: "Expiry Alert...",
-          msg: "Oppps ! Medicine is already expiyred ... you are not able to add this in stock",
+          msg: "Oops! Medicine is already expired... you cannot add this to stock.",
         },
       });
     }
@@ -131,8 +119,9 @@ const AddItem = () => {
       <Navbar title="Purchase Medicine" />
       <NavigationBar />
       <div className={classes.add_container}>
-        <div className={classes.container}>
+        <form className={classes.container} onSubmit={handleSubmit}>
           <TextField
+            required
             className={classes.input}
             id="name"
             label="Item Name"
@@ -140,7 +129,9 @@ const AddItem = () => {
             value={data.name}
             onChange={changeHandle}
           />
+
           <TextField
+            required
             className={classes.input}
             id="vendorName"
             label="Vendor Name"
@@ -150,23 +141,31 @@ const AddItem = () => {
           />
 
           <TextField
+            required
             className={classes.input}
             id="quantity"
             label="Quantity"
             type="number"
+            inputProps={{ min: 1 }}
+            onKeyDown={blockInvalidChar}
             variant="outlined"
             value={data.quantity}
             onChange={changeHandle}
           />
+
           <TextField
+            required
             className={classes.input}
             id="price"
-            type="number"
             label="Price (per/piece)"
+            type="number"
+            inputProps={{ min: 1 }}
+            onKeyDown={blockInvalidChar}
             variant="outlined"
             value={data.price}
             onChange={changeHandle}
           />
+
           <div className={classes.cal}>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DesktopDatePicker
@@ -175,18 +174,19 @@ const AddItem = () => {
                 value={value}
                 onChange={handleChange}
                 renderInput={(params) => (
-                  <TextField className={classes.input} {...params} />
+                  <TextField className={classes.input} required {...params} />
                 )}
                 views={["day", "month", "year"]}
               />
             </LocalizationProvider>
           </div>
+
           <div className={classes.btn}>
-            <Button variant="contained" type="submit" onClick={handleSubmit}>
+            <Button variant="contained" type="submit">
               PURCHASE
             </Button>
           </div>
-        </div>
+        </form>
       </div>
     </>
   );
