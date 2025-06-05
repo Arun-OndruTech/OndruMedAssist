@@ -234,96 +234,62 @@ const Sales = () => {
               <TextField
                 fullWidth
                 variant="outlined"
+                size="small"
                 placeholder="Search medicines..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 margin="normal"
               />
-              <Grid container spacing={2}>
+              <Grid container spacing={1}>
                 {filteredMedicines.map((medicine) => (
-                  <Grid item xs={4} key={medicine.name}>
-                    <Card>
-                      <CardContent>
+                  <Grid item xs={4} sm={3} md={3} key={medicine.name}>
+                    <Card className={classes.compactCard}>
+                      <CardContent className={classes.compactContent}>
                         <Typography
-                          variant="h6"
-                          sx={{
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            maxWidth: "100%",
-                            display: "block",
-                          }}
+                          variant="subtitle1"
+                          className={classes.medicineName}
                           title={medicine.name}
                         >
                           {medicine.name}
                         </Typography>
-                        <Box display="flex" alignItems="center" mb={1}>
-                          <Box mr={1} display="flex" alignItems="center">
-                            <span role="img" aria-label="price">
-                              💰:
-                            </span>
-                            <Typography
-                              sx={{
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                maxWidth: "100%",
-                                display: "block",
-                                ml: 0.5,
-                              }}
-                              title={`₹${medicine.price}`}
-                            >
-                              ₹{medicine.price}
-                            </Typography>
-                          </Box>
 
-                          <Box ml={2} display="flex" alignItems="center">
-                            <span role="img" aria-label="stock">
-                              📦:
-                            </span>
-                            <Typography
-                              sx={{
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                maxWidth: "100%",
-                                display: "block",
-                                ml: 0.5,
-                              }}
-                              title={medicine.quantity}
-                            >
-                              {medicine.quantity}
-                            </Typography>
-                          </Box>
-                        </Box>
-                        <Box display="flex" alignItems="center" mt={1}>
-                          <span role="img" aria-label="expiry">
-                            ⏳:
-                          </span>
-                          <Typography
-                            sx={{
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              maxWidth: "100%",
-                              display: "block",
-                              ml: 0.5,
-                            }}
-                            title={medicine.expiryDate}
+                        <div className={classes.medicineDetails}>
+                          <div className={classes.rowFlex}>
+                            <div className={classes.detailRow}>
+                              <span className={classes.iconLabel}>💰</span>
+                              <Typography variant="body2">
+                                ₹{medicine.price}
+                              </Typography>
+                            </div>
+                            <div className={classes.detailRow}>
+                              <span className={classes.iconLabel}>📦</span>
+                              <Typography variant="body2">
+                                {medicine.quantity}
+                              </Typography>
+                            </div>
+                          </div>
+
+                          <div
+                            className={`${classes.detailRow} ${classes.expiryRow}`}
                           >
-                            {medicine.expiryDate
-                              ? new Date(
-                                  medicine.expiryDate
-                                ).toLocaleDateString()
-                              : "N/A"}
-                          </Typography>
-                        </Box>
+                            <span className={classes.iconLabel}>⏳</span>
+                            <Typography variant="body2">
+                              {medicine.expiryDate
+                                ? new Date(
+                                    medicine.expiryDate
+                                  ).toLocaleDateString("en-GB")
+                                : "N/A"}
+                            </Typography>
+                          </div>
+                        </div>
 
                         <Button
                           variant="contained"
-                          startIcon={<AddShoppingCartIcon />}
+                          color="primary"
+                          startIcon={<AddShoppingCartIcon fontSize="small" />}
                           onClick={() => handleAddToCart(medicine)}
                           disabled={medicine.quantity < 1}
+                          className={classes.compactButton}
                           fullWidth
                         >
                           Add to Cart
@@ -343,7 +309,7 @@ const Sales = () => {
                     Shopping Cart
                   </Typography>
 
-                  {/* Customer Info Inputs */}
+                  {/* Customer Details */}
                   <Box display="flex" gap={2} mb={2}>
                     <TextField
                       label="Customer Name"
@@ -368,44 +334,45 @@ const Sales = () => {
                   {cart.length === 0 ? (
                     <Typography>No items in cart</Typography>
                   ) : (
-                    <Stack spacing={2}>
+                    <Box display="flex" flexDirection="column" gap={1}>
                       {cart.map((item) => (
                         <Box
                           key={item._id}
-                          display="flex"
-                          justifyContent="space-between"
-                          alignItems="center"
-                          p={1.5}
-                          border="1px solid #eee"
-                          borderRadius={1}
-                          boxShadow="0 1px 3px rgba(0,0,0,0.05)"
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            p: 1,
+                            border: "1px solid #eee",
+                            borderRadius: 1,
+                            backgroundColor: "#fafafa",
+                          }}
                         >
-                          <Box
-                            flex={1}
-                            sx={{ minWidth: 0, overflow: "hidden" }}
-                          >
+                          {/* 🟦 Name (50%) */}
+                          <Box sx={{ flex: 1.5, overflow: "hidden" }}>
                             <Typography
-                              variant="subtitle1"
+                              variant="body2"
                               noWrap
                               sx={{
+                                fontWeight: 500,
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
                                 whiteSpace: "nowrap",
-                                maxWidth: "100%",
-                                display: "block",
                               }}
-                              title={item.name}
+                              title={item.name} // Tooltip for full name
                             >
                               {item.name}
                             </Typography>
-                            <Typography variant="body2" color="textSecondary">
-                              ₹{item.price} x {item.quantity} = ₹
-                              {(item.price * item.quantity).toFixed(2)}
-                            </Typography>
                           </Box>
 
-                          {/* Quantity Controls */}
-                          <Box display="flex" alignItems="center" mx={1}>
+                          {/* 🟨 Quantity Controls (25%) */}
+                          <Box
+                            sx={{
+                              flex: 1,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
                             <IconButton
                               size="small"
                               onClick={() => {
@@ -420,12 +387,81 @@ const Sales = () => {
                                 }
                               }}
                             >
-                              <RemoveCircleOutlineIcon fontSize="small" />
+                              <RemoveIcon fontSize="small" />
                             </IconButton>
 
-                            <Typography variant="body2" mx={1}>
-                              {item.quantity}
-                            </Typography>
+                            <TextField
+                              type="number"
+                              size="small"
+                              variant="outlined"
+                              value={item.quantity}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const stockItem = inventory.find(
+                                  (inv) => inv._id === item._id
+                                );
+
+                                if (val === "") {
+                                  setCart((prev) =>
+                                    prev.map((i) =>
+                                      i._id === item._id
+                                        ? { ...i, quantity: "" }
+                                        : i
+                                    )
+                                  );
+                                  return;
+                                }
+
+                                const num = Number(val);
+                                if (
+                                  !isNaN(num) &&
+                                  num >= 1 &&
+                                  num <= (stockItem?.quantity || Infinity)
+                                ) {
+                                  setCart((prev) =>
+                                    prev.map((i) =>
+                                      i._id === item._id
+                                        ? { ...i, quantity: num }
+                                        : i
+                                    )
+                                  );
+                                }
+                              }}
+                              onBlur={() => {
+                                if (!item.quantity || item.quantity < 1) {
+                                  setCart((prev) =>
+                                    prev.map((i) =>
+                                      i._id === item._id
+                                        ? { ...i, quantity: 1 }
+                                        : i
+                                    )
+                                  );
+                                }
+                              }}
+                              inputProps={{
+                                min: 1,
+                                style: {
+                                  width: "28px",
+                                  padding: "2px 4px",
+                                  textAlign: "center",
+                                  fontSize: "0.75rem",
+                                  MozAppearance: "textfield",
+                                },
+                              }}
+                              sx={{
+                                "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
+                                  {
+                                    WebkitAppearance: "none",
+                                    margin: 0,
+                                  },
+                                "& input": {
+                                  MozAppearance: "textfield",
+                                },
+                                "& .MuiInputBase-input": {
+                                  padding: "4px 0px !important",
+                                },
+                              }}
+                            />
 
                             <IconButton
                               size="small"
@@ -445,7 +481,7 @@ const Sales = () => {
                                   dispatch({
                                     type: "show popup",
                                     payload: {
-                                      msg: `Only ${stockItem.quantity} items available for ${item.name}.`,
+                                      msg: `Only ${stockItem.quantity} available.`,
                                       type: "error",
                                     },
                                   });
@@ -456,34 +492,55 @@ const Sales = () => {
                             </IconButton>
                           </Box>
 
-                          {/* Remove Button */}
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => {
-                              setCart((prev) =>
-                                prev.filter((i) => i._id !== item._id)
-                              );
-                              setInventory((prev) =>
-                                prev.map((inv) =>
-                                  inv._id === item._id
-                                    ? {
-                                        ...inv,
-                                        quantity: inv.quantity + item.quantity,
-                                      }
-                                    : inv
-                                )
-                              );
+                          {/* 🟧 Price + Delete (25%) with NO GAP */}
+                          <Box
+                            sx={{
+                              flex: 1,
+                              display: "flex",
+                              justifyContent: "flex-end",
+                              alignItems: "center",
                             }}
                           >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontWeight: 500,
+                                textAlign: "right",
+                                mr: 1, // just a small spacing before delete
+                              }}
+                            >
+                              ₹{(item.price * item.quantity).toFixed(2)}
+                            </Typography>
+
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => {
+                                setCart((prev) =>
+                                  prev.filter((i) => i._id !== item._id)
+                                );
+                                setInventory((prev) =>
+                                  prev.map((inv) =>
+                                    inv._id === item._id
+                                      ? {
+                                          ...inv,
+                                          quantity:
+                                            inv.quantity + item.quantity,
+                                        }
+                                      : inv
+                                  )
+                                );
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
                         </Box>
                       ))}
-                    </Stack>
+                    </Box>
                   )}
 
-                  {/* Total Price */}
+                  {/* Total */}
                   <Typography variant="h6" mt={3}>
                     Total: ₹
                     {cart
@@ -494,7 +551,7 @@ const Sales = () => {
                       .toFixed(2)}
                   </Typography>
 
-                  {/* Checkout Button */}
+                  {/* Checkout */}
                   <Button
                     variant="contained"
                     color="primary"

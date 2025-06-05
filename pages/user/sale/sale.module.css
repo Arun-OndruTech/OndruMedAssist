@@ -93,3 +93,126 @@
   color: #555;
   margin-bottom: 0.3rem;
 }
+
+
+.main_container {
+  padding: 20px;
+}
+
+.pos_container {
+  margin-top: 20px;
+}
+
+.compactCard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.compactContent {
+  padding: 10px !important;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.compactButton {
+  padding: 4px 8px !important;
+  font-size: 0.75rem !important;
+  margin-top: auto;
+}
+
+.medicineName {
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.medicineDetails {
+  font-size: 0.75rem !important;
+  margin-top: 4px !important;
+}
+
+.detailRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.iconLabel {
+  font-size: 0.7rem;
+  margin-right: 4px;
+}
+
+.expiryRow {
+  margin-top: 6px;
+}
+
+.invoiceHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.invoiceMeta {
+  text-align: right;
+}
+
+.customerInfo {
+  margin-bottom: 15px;
+}
+
+.rowFlex {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.detailRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cart_row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.cart_name {
+  flex: 2;
+  font-weight: 500;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cart_controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.cart_quantity {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.cart_price {
+  min-width: 60px;
+  text-align: right;
+  font-weight: 500;
+  flex-shrink: 0;
+}

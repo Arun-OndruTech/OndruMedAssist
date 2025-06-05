@@ -52,6 +52,7 @@ const Sales = () => {
               </Button>
             </div>
           </div>
+
           {medicineData.length !== 0 ? (
             <DataTable data={medicineData} col={columns} />
           ) : (
