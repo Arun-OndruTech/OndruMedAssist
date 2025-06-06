@@ -1,3 +1,4 @@
+// Components/DataTabel/Purchase/Column.js
 export const columns = [
   { id: "name", field: "name", headerName: "Name", width: 350 },
   {
@@ -9,9 +10,22 @@ export const columns = [
   {
     id: "total_quantity",
     field: "total_quantity",
-    headerName: "Quantity",
+    headerName: "Purchased Quantity",
     type: "number",
-    width: 120,
+    width: 160,
+  },
+
+  {
+    field: "quantity",
+    headerName: "Available Quantity",
+    type: "number",
+    width: 160,
+  },
+  {
+    field: "price",
+    headerName: "Price",
+    type: "number",
+    width: 160,
   },
   {
     id: "updateon",
