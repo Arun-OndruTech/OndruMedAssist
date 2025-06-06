@@ -1,3 +1,4 @@
+// pages/user/purchase/index.js
 import classes from "./purchase.module.css";
 import Navbar from "../../../Components/subNavbar/navbar";
 import Head from "next/head";
@@ -21,13 +22,23 @@ const Sales = () => {
     axios
       .post("/api/Medicine/fetch", { uid: auth.currentUser.uid })
       .then((res) => {
-        const fetch_data = res.data.history;
-        {
-          fetch_data &&
-            setMedicineData(
-              fetch_data.filter((medicine) => medicine.type === "add")
-            );
-        }
+        const history = res.data.history || [];
+        const stock = res.data.stock || [];
+
+        // Get only the 'add' type entries from history
+        const adds = history.filter((m) => m.type === "add");
+
+        // Merge stock's available quantity with history's purchase record
+        const enriched = adds.map((item) => {
+          const stockMatch = stock.find((s) => s.name === item.name);
+          return {
+            ...item,
+            quantity: stockMatch ? stockMatch.quantity : 0,
+            price: stockMatch ? stockMatch.price : item.price,
+          };
+        });
+
+        setMedicineData(enriched);
       });
   }, []);
 

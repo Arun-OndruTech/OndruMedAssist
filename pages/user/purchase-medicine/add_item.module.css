@@ -38,3 +38,19 @@
     justify-content: flex-start;
     width: 100%;
 }
+
+
+.vendorFieldContainer {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    width: 100%;
+}
+
+.addVendorBtn {
+    height: 56px;
+    white-space: nowrap;
+    padding: 0 16px;
+    font-weight: 500;
+}

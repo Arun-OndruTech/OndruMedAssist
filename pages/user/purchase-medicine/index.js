@@ -1,9 +1,17 @@
 import Navbar from "../../../Components/subNavbar/navbar";
 import classes from "./add_item.module.css";
-import { Button, TextField } from "@mui/material";
+import {
+  Button,
+  TextField,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  IconButton,
+} from "@mui/material";
 import { DesktopDatePicker } from "@mui/x-date-pickers/DesktopDatePicker";
 import NavigationBar from "../../../Components/SideLayout/Navigation/NavigationBar";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -15,6 +23,7 @@ import getCurrentDate from "../../../utils/getCurrentDate";
 import { StateContext } from "../../../Context/StateContext";
 import AlertDialog from "../../../Components/AlertDialog/AlertDialog";
 import Head from "next/head";
+import AddIcon from "@mui/icons-material/Add";
 
 // Prevent non-numeric and negative inputs
 const blockInvalidChar = (e) => {
@@ -34,6 +43,21 @@ const AddItem = () => {
     price: "",
     vendorName: "",
   });
+  const [vendors, setVendors] = useState([]);
+  const [customVendor, setCustomVendor] = useState(false);
+
+  useEffect(() => {
+    axios
+      .post("/api/Medicine/fetch", { uid: auth.currentUser.uid })
+      .then((res) => {
+        const uniqueVendors = [
+          ...new Set(
+            res.data.history?.map((m) => m.vendorName).filter(Boolean)
+          ),
+        ];
+        setVendors(uniqueVendors);
+      });
+  }, []);
 
   const handleChange = (newValue) => {
     setValue(newValue);
@@ -130,15 +154,55 @@ const AddItem = () => {
             onChange={changeHandle}
           />
 
-          <TextField
-            required
-            className={classes.input}
-            id="vendorName"
-            label="Vendor Name"
-            variant="outlined"
-            value={data.vendorName}
-            onChange={changeHandle}
-          />
+          <div
+            className={classes.vendorFieldContainer}
+            style={{ display: "flex", gap: "12px", alignItems: "center" }}
+          >
+            {!customVendor ? (
+              <FormControl sx={{ flex: "0 0 65%" }}>
+                <InputLabel id="vendor-label">Vendor Name</InputLabel>
+                <Select
+                  labelId="vendor-label"
+                  id="vendorName"
+                  value={data.vendorName}
+                  label="Vendor Name"
+                  onChange={(e) =>
+                    setData((prev) => ({ ...prev, vendorName: e.target.value }))
+                  }
+                >
+                  {vendors.map((vendor, idx) => (
+                    <MenuItem key={idx} value={vendor}>
+                      {vendor}
+                    </MenuItem>
+                  ))}
+                  <MenuItem value="">
+                    <em>None</em>
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            ) : (
+              <TextField
+                required
+                sx={{ flex: "0 0 65%" }}
+                id="vendorName"
+                label="New Vendor Name"
+                variant="outlined"
+                value={data.vendorName}
+                onChange={changeHandle}
+              />
+            )}
+
+            <Button
+              onClick={() => setCustomVendor((prev) => !prev)}
+              variant="outlined"
+              color="primary"
+              // startIcon={<AddIcon />}
+              sx={{ flex: "0 0 130px", whiteSpace: "nowrap" }}
+              className={classes.addVendorBtn}
+            >
+              {customVendor ? "Existing" : "Add Vendor"}
+            </Button>
+          </div>
 
           <TextField
             required
