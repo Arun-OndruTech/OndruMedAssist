@@ -1,23 +1,18 @@
 import classes from "./sale.module.css";
 import Navbar from "../../../Components/subNavbar/navbar";
 import Head from "next/head";
-import DataTable from "../../../Components/DataTabel/DataTabel";
 import Button from "@mui/material/Button";
 import axios from "axios";
-import { useRouter } from "next/router";
 import { useContext, useEffect, useState } from "react";
 import { auth } from "../../../firebase/firebase";
 import { StateContext } from "../../../Context/StateContext";
 import SnackbarTag from "../../../Components/Snackbar/Snackbar";
-import { columns_sale } from "../../../Components/DataTabel/Sales/Column";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import { TextField, Grid, Card, CardContent, Typography } from "@mui/material";
 import RemoveIcon from "@mui/icons-material/Remove";
 import AddIcon from "@mui/icons-material/Add";
-import Stack from "@mui/material/Stack";
 import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
-
 import {
   Dialog,
   DialogTitle,
@@ -37,21 +32,22 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import PrintIcon from "@mui/icons-material/Print";
 import DownloadIcon from "@mui/icons-material/Download";
-import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 
 const Sales = () => {
-  const router = useRouter();
   const [medicineData, setMedicineData] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [cart, setCart] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("");
   const { state, dispatch } = useContext(StateContext);
   const [customerName, setCustomerName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
 
-  // --- NEW: State for invoice dialog ---
+  // Pagination state
+  const [displayCount, setDisplayCount] = useState(12);
+  const [filteredMedicines, setFilteredMedicines] = useState([]);
+
+  // Invoice dialog state
   const [open, setOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
 
@@ -60,7 +56,9 @@ const Sales = () => {
     axios
       .post("/api/Medicine/fetch", { uid: auth.currentUser.uid })
       .then((res) => {
-        setInventory(res.data.stock.filter((med) => med.quantity > 0));
+        const availableStock = res.data.stock.filter((med) => med.quantity > 0);
+        setInventory(availableStock);
+        setFilteredMedicines(availableStock); // Initialize filtered medicines
         setMedicineData(res.data.sales || []);
       })
       .catch((err) => {
@@ -71,12 +69,32 @@ const Sales = () => {
       });
   }, []);
 
+  // Global search functionality
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = inventory.filter((med) =>
+        med.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredMedicines(filtered);
+      setDisplayCount(12); // Reset pagination on search
+    } else {
+      setFilteredMedicines(inventory);
+    }
+  }, [searchTerm, inventory]);
+
+  const handleLoadMore = () => {
+    setDisplayCount((prev) => prev + 12);
+  };
+
+  const hasMore = filteredMedicines.length > displayCount;
+
   const handleAddToCart = (medicine) => {
     const existingItem = cart.find((item) => item._id === medicine._id);
     const stockItem = inventory.find((item) => item._id === medicine._id);
 
     // Calculate how many are already in the cart
     const cartQty = existingItem ? existingItem.quantity : 0;
+
     // Maximum allowed is stockItem.quantity
     if (cartQty >= stockItem.quantity) {
       dispatch({
@@ -113,7 +131,6 @@ const Sales = () => {
     setShowPaymentDialog(true);
   };
 
-  // --- MODIFIED: Show invoice dialog after sale ---
   const handlePaymentSubmit = async (method) => {
     try {
       const sales = cart.map((item) => ({
@@ -176,7 +193,7 @@ const Sales = () => {
       setPhoneNumber("");
       setCart([]);
 
-      // --- Move this here so the payment dialog closes after invoice is shown ---
+      // Close payment dialog
       setShowPaymentDialog(false);
     } catch (error) {
       console.error("Sale error:", error);
@@ -209,11 +226,6 @@ const Sales = () => {
     html2pdf().set(opt).from(content).save();
   };
 
-  const filteredMedicines = inventory.filter((med) =>
-    med.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // --- MODIFIED: handleClose for dialog ---
   const handleClose = () => {
     setOpen(false);
     setSelectedInvoice(null);
@@ -241,8 +253,8 @@ const Sales = () => {
                 margin="normal"
               />
               <Grid container spacing={1}>
-                {filteredMedicines.map((medicine) => (
-                  <Grid item xs={4} sm={3} md={3} key={medicine.name}>
+                {filteredMedicines.slice(0, displayCount).map((medicine) => (
+                  <Grid item xs={4} sm={3} md={3} key={medicine._id}>
                     <Card className={classes.compactCard}>
                       <CardContent className={classes.compactContent}>
                         <Typography
@@ -299,6 +311,24 @@ const Sales = () => {
                   </Grid>
                 ))}
               </Grid>
+
+              {/* Load More Button */}
+              {hasMore && (
+                <div style={{ textAlign: "center", marginTop: "20px" }}>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    onClick={handleLoadMore}
+                  >
+                    Load More (
+                    {Math.min(12, filteredMedicines.length - displayCount)})
+                  </Button>
+                  <Typography variant="body2" style={{ marginTop: "8px" }}>
+                    Showing {Math.min(displayCount, filteredMedicines.length)}{" "}
+                    of {filteredMedicines.length} products
+                  </Typography>
+                </div>
+              )}
             </Grid>
 
             {/* Right side - Cart */}
@@ -347,7 +377,7 @@ const Sales = () => {
                             backgroundColor: "#fafafa",
                           }}
                         >
-                          {/* 🟦 Name (50%) */}
+                          {/* Name */}
                           <Box sx={{ flex: 1.5, overflow: "hidden" }}>
                             <Typography
                               variant="body2"
@@ -358,13 +388,13 @@ const Sales = () => {
                                 textOverflow: "ellipsis",
                                 whiteSpace: "nowrap",
                               }}
-                              title={item.name} // Tooltip for full name
+                              title={item.name}
                             >
                               {item.name}
                             </Typography>
                           </Box>
 
-                          {/* 🟨 Quantity Controls (25%) */}
+                          {/* Quantity Controls */}
                           <Box
                             sx={{
                               flex: 1,
@@ -492,7 +522,7 @@ const Sales = () => {
                             </IconButton>
                           </Box>
 
-                          {/* 🟧 Price + Delete (25%) with NO GAP */}
+                          {/* Price + Delete */}
                           <Box
                             sx={{
                               flex: 1,
@@ -506,7 +536,7 @@ const Sales = () => {
                               sx={{
                                 fontWeight: 500,
                                 textAlign: "right",
-                                mr: 1, // just a small spacing before delete
+                                mr: 1,
                               }}
                             >
                               ₹{(item.price * item.quantity).toFixed(2)}
@@ -518,17 +548,6 @@ const Sales = () => {
                               onClick={() => {
                                 setCart((prev) =>
                                   prev.filter((i) => i._id !== item._id)
-                                );
-                                setInventory((prev) =>
-                                  prev.map((inv) =>
-                                    inv._id === item._id
-                                      ? {
-                                          ...inv,
-                                          quantity:
-                                            inv.quantity + item.quantity,
-                                        }
-                                      : inv
-                                  )
                                 );
                               }}
                             >
