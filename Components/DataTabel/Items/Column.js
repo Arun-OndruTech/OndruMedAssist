@@ -15,9 +15,16 @@ export const columns = [
   },
   {
     field: "expiryDate",
-    headerName: "ExpiryDate",
+    headerName: "Expiry Date",
     width: 190,
+    valueFormatter: (params) => {
+      const date = new Date(params.value);
+      return `${String(date.getDate()).padStart(2, "0")}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}-${date.getFullYear()}`;
+    },
   },
+  ,
   {
     field: "vendorName",
     headerName: "vendor Name",
@@ -27,5 +34,11 @@ export const columns = [
     field: "uploadOn",
     headerName: "Upload-On",
     width: 160,
+    valueFormatter: (params) => {
+      const date = new Date(params.value);
+      return `${String(date.getDate()).padStart(2, "0")}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}-${date.getFullYear()}`;
+    },
   },
 ];

@@ -44,7 +44,7 @@ const Sales = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
 
   // Pagination state
-  const [displayCount, setDisplayCount] = useState(12);
+  const [displayCount, setDisplayCount] = useState(20);
   const [filteredMedicines, setFilteredMedicines] = useState([]);
 
   // Invoice dialog state
@@ -76,14 +76,14 @@ const Sales = () => {
         med.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredMedicines(filtered);
-      setDisplayCount(12); // Reset pagination on search
+      setDisplayCount(20); // Reset pagination on search
     } else {
       setFilteredMedicines(inventory);
     }
   }, [searchTerm, inventory]);
 
   const handleLoadMore = () => {
-    setDisplayCount((prev) => prev + 12);
+    setDisplayCount((prev) => prev + 20);
   };
 
   const hasMore = filteredMedicines.length > displayCount;
@@ -231,6 +231,30 @@ const Sales = () => {
     setSelectedInvoice(null);
   };
 
+  const [error, setError] = useState(false);
+  const [helperText, setHelperText] = useState("");
+
+  const handlePhoneChange = (e) => {
+    const value = e.target.value;
+
+    // Allow only digits
+    if (!/^\d*$/.test(value)) {
+      setError(true);
+      setHelperText("Only numbers are allowed");
+    } else if (value.length > 10) {
+      setError(true);
+      setHelperText("Phone number cannot exceed 10 digits");
+    } else if (value.length === 10) {
+      setError(false);
+      setHelperText("");
+    } else {
+      setError(true);
+      setHelperText("Phone number must be 10 digits");
+    }
+
+    setPhoneNumber(value);
+  };
+
   return (
     <>
       <Head>
@@ -321,7 +345,7 @@ const Sales = () => {
                     onClick={handleLoadMore}
                   >
                     Load More (
-                    {Math.min(12, filteredMedicines.length - displayCount)})
+                    {Math.min(20, filteredMedicines.length - displayCount)})
                   </Button>
                   <Typography variant="body2" style={{ marginTop: "8px" }}>
                     Showing {Math.min(displayCount, filteredMedicines.length)}{" "}
@@ -332,7 +356,7 @@ const Sales = () => {
             </Grid>
 
             {/* Right side - Cart */}
-            <Grid item xs={12} md={4}>
+            <Grid item xs={8} md={4}>
               <Card>
                 <CardContent>
                   <Typography variant="h5" gutterBottom>
@@ -355,8 +379,10 @@ const Sales = () => {
                       size="small"
                       fullWidth
                       value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      onChange={handlePhoneChange}
                       inputProps={{ maxLength: 10 }}
+                      error={error}
+                      helperText={helperText}
                     />
                   </Box>
 
