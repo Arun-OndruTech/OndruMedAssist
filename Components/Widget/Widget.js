@@ -15,7 +15,7 @@ export default function Widget({ type, amount }) {
   switch (type) {
     case "purchase":
       data = {
-        title: "Purchase",
+        title: "Total Purchase",
         icon: (
           <ShoppingCartIcon
             className={classes.icon}
@@ -42,7 +42,7 @@ export default function Widget({ type, amount }) {
       break;
     case "sales":
       data = {
-        title: "Sales",
+        title: "Total Sales",
         icon: (
           <SellIcon
             className={classes.icon}
@@ -69,7 +69,8 @@ export default function Widget({ type, amount }) {
       break;
     case "balance":
       data = {
-        title: "Balance",
+        title: "Today's Sales",
+        dest: "orders",
         icon: (
           <AccountBalanceWalletIcon
             className={classes.icon}
@@ -79,6 +80,7 @@ export default function Widget({ type, amount }) {
             }}
           />
         ),
+        link: "Sales Detail",
         pin: (
           <FiberManualRecordIcon
             className={classes.icon2}

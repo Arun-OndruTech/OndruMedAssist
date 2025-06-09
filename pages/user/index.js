@@ -36,6 +36,29 @@ export default function User() {
     // dispatch({ type: 'set number of notifications', payload: 2 });
   }, []);
 
+  const [totalSales, setTotalSales] = useState(0);
+
+  useEffect(() => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    const fetchAllData = async () => {
+      try {
+        const [salesRes, purchaseRes] = await Promise.all([
+          axios.get(`/api/User/today?uid=${uid}`),
+          axios.post("/api/Medicine/fetch", { uid }),
+        ]);
+
+        setTotalSales(salesRes.data.totalSalesToday || 0);
+      } catch (err) {
+        console.error("❌ Failed to fetch data", err);
+        setTotalSales(0);
+      }
+    };
+
+    fetchAllData();
+  }, []);
+
   return (
     <>
       <Head>
@@ -80,7 +103,7 @@ export default function User() {
           </div>
           <Widget type="purchase" amount={fetchData.purchase} />
           <Widget type="sales" amount={fetchData.sale} />
-          {/* <Widget type="balance" /> */}
+          <Widget type="balance" amount={totalSales} />
         </div>
         <div className={classes.charts}>
           <Feature />

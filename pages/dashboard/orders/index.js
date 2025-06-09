@@ -33,10 +33,12 @@ const Orders = () => {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
+  const [isLoading, setIsLoading] = useState(true);
   const { state, dispatch } = useContext(StateContext);
 
   useEffect(() => {
     const fetchInvoices = async () => {
+      setIsLoading(true);
       try {
         const response = await axios.post("/api/Invoice/fetch", {
           uid: auth.currentUser.uid,
@@ -49,6 +51,8 @@ const Orders = () => {
           type: "show popup",
           payload: { msg: "Failed to fetch invoices", type: "error" },
         });
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -57,51 +61,60 @@ const Orders = () => {
     }
   }, []);
 
-  const handleOpen = (invoice) => {
-    setSelectedInvoice(invoice);
-    setOpen(true);
+  const handleFilterChange = (event) => {
+    const value = event.target.value;
+    setFilterType(value);
+    applySearch(searchQuery, value);
+  };
+
+  const handleSearch = (event) => {
+    const value = event.target.value.toLowerCase();
+    setSearchQuery(value);
+    applySearch(value, filterType);
+  };
+
+  const applySearch = (query, type) => {
+    let filtered = invoices;
+    if (type === "name") {
+      filtered = invoices.filter((inv) =>
+        inv.customerName?.toLowerCase().includes(query)
+      );
+    } else if (type === "invoice") {
+      filtered = invoices.filter((inv) =>
+        inv.invoiceNumber?.toLowerCase().includes(query)
+      );
+    } else if (type === "date") {
+      filtered = invoices.filter((inv) =>
+        new Date(inv.date).toLocaleDateString().includes(query)
+      );
+    } else {
+      filtered = invoices.filter(
+        (inv) =>
+          inv.customerName?.toLowerCase().includes(query) ||
+          inv.invoiceNumber?.toLowerCase().includes(query) ||
+          new Date(inv.date).toLocaleDateString().includes(query)
+      );
+    }
+    setFilteredInvoices(filtered);
   };
 
   const handleClose = () => {
     setOpen(false);
-  };
-
-  const handleSearch = (e) => {
-    const query = e.target.value.toLowerCase();
-    setSearchQuery(query);
-
-    const filtered = invoices.filter((inv) => {
-      if (filterType === "name") {
-        return inv.customerName.toLowerCase().includes(query);
-      } else if (filterType === "invoice") {
-        return inv.invoiceNumber.toLowerCase().includes(query);
-      } else if (filterType === "date") {
-        return new Date(inv.date).toLocaleDateString().includes(query);
-      } else {
-        return (
-          inv.customerName.toLowerCase().includes(query) ||
-          inv.invoiceNumber.toLowerCase().includes(query) ||
-          new Date(inv.date).toLocaleDateString().includes(query)
-        );
-      }
-    });
-
-    setFilteredInvoices(filtered);
-  };
-
-  const handleFilterChange = (e) => {
-    setFilterType(e.target.value);
-    setSearchQuery("");
-    setFilteredInvoices(invoices); // Reset search on filter change
+    setSelectedInvoice(null);
   };
 
   const columns = [
     { field: "invoiceNumber", headerName: "Invoice #", width: 280 },
     {
       field: "date",
-      headerName: "Date",
+      headerName: "Sale Date",
       width: 150,
-      valueFormatter: (params) => new Date(params.value).toLocaleDateString(),
+      valueFormatter: (params) => {
+        const date = new Date(params.value);
+        return `${String(date.getDate()).padStart(2, "0")}-${String(
+          date.getMonth() + 1
+        ).padStart(2, "0")}-${date.getFullYear()}`;
+      },
     },
     { field: "customerName", headerName: "Customer", width: 200 },
     {
@@ -164,15 +177,16 @@ const Orders = () => {
         </div>
 
         <div className={classes.dataTabelContainer}>
-          {filteredInvoices.length > 0 ? (
+          {isLoading ? (
+            <h2 style={{ opacity: 0.6 }}>Loading orders...</h2>
+          ) : filteredInvoices.length > 0 ? (
             <DataTable data={filteredInvoices} col={columns} />
           ) : (
-            <h2 style={{ opacity: ".5" }}>No orders found</h2>
+            <h2 style={{ opacity: 0.5 }}>No orders found</h2>
           )}
         </div>
       </div>
 
-      {/* Invoice Dialog */}
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle>Invoice Details</DialogTitle>
         <DialogContent>
