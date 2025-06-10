@@ -1,6 +1,5 @@
 .main_container {
     height: 100vh;
-    /* full height of viewport */
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -9,23 +8,32 @@
 .dataTabelContainer {
     flex: 1;
     overflow-y: auto;
-    padding: 0.7em 1em;
+    padding: 0.2em 1em;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.7em;
 }
 
-.input_container {
+
+.searchContainer {
     display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    width: 100%;
-    gap: 10px;
-    /* border: 2px solid black; */
+    gap: 1rem;
+    padding: 1rem;
+    margin: 1rem 1rem 1rem;
+    /* background-color: #f9f9f9; */
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    flex-wrap: wrap;
+    align-items: flex-end;
 }
 
-.input_container .input {
-    width: 40%;
-    /* margin: 0; */
+/* Dropdown narrower */
+.filterBox {
+    flex: 0 0 200px;
+}
+
+/* Search input takes remaining space */
+.searchBox {
+    flex: 1;
 }

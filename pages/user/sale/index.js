@@ -265,21 +265,27 @@ const Sales = () => {
         <Navbar title="Sales" />
         <div className={classes.pos_container}>
           <Grid container spacing={3}>
-            {/* Left side - Inventory */}
-            <Grid item xs={8}>
+            {/* Left side - Scrollable Inventory */}
+            <Grid item xs={8} className={classes.scrollable_inventory}>
               <TextField
-                fullWidth
+                label="Search"
                 variant="outlined"
-                size="small"
                 placeholder="Search medicines..."
+                fullWidth
+                size="small"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                margin="normal"
+                style={{ marginBottom: "16px" }}
               />
               <Grid container spacing={1}>
                 {filteredMedicines.slice(0, displayCount).map((medicine) => (
-                  <Grid item xs={4} sm={3} md={3} key={medicine._id}>
-                    <Card className={classes.compactCard}>
+                  <Grid
+                    item
+                    xs={12}
+                    md={3}
+                    className={classes.fixed_cart_container}
+                  >
+                    <Card className={classes.fixed_cart}>
                       <CardContent className={classes.compactContent}>
                         <Typography
                           variant="subtitle1"
@@ -355,9 +361,9 @@ const Sales = () => {
               )}
             </Grid>
 
-            {/* Right side - Cart */}
-            <Grid item xs={8} md={4}>
-              <Card>
+            {/* Right side - Fixed Cart */}
+            <Grid item xs={4} className={classes.fixed_cart_container}>
+              <Card className={classes.fixed_cart}>
                 <CardContent>
                   <Typography variant="h5" gutterBottom>
                     Shopping Cart
@@ -390,7 +396,12 @@ const Sales = () => {
                   {cart.length === 0 ? (
                     <Typography>No items in cart</Typography>
                   ) : (
-                    <Box display="flex" flexDirection="column" gap={1}>
+                    <Box
+                      className={classes.cartItemsScroll}
+                      display="flex"
+                      flexDirection="column"
+                      gap={1}
+                    >
                       {cart.map((item) => (
                         <Box
                           key={item._id}
@@ -585,7 +596,7 @@ const Sales = () => {
                     </Box>
                   )}
 
-                  {/* Total */}
+                  {/* Total and Checkout */}
                   <Typography variant="h6" mt={3}>
                     Total: ₹
                     {cart
@@ -595,8 +606,6 @@ const Sales = () => {
                       )
                       .toFixed(2)}
                   </Typography>
-
-                  {/* Checkout */}
                   <Button
                     variant="contained"
                     color="primary"

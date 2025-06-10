@@ -3,7 +3,13 @@ import { DataGrid } from "@mui/x-data-grid";
 import styles from "./DataTabel.module.css"; // Make sure this file exists
 
 export default function DataTable({ data, col, type }) {
-  const rows = data;
+  // Sort: low quantity first, then others
+  const rows = [...data].sort((a, b) => {
+    // Put rows with quantity < 1 at the top
+    if (a.quantity < 1 && b.quantity >= 1) return -1;
+    if (a.quantity >= 1 && b.quantity < 1) return 1;
+    return 0; // keep original order otherwise
+  });
 
   return (
     <div style={{ height: 475, width: "100%" }}>

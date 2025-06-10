@@ -70,7 +70,7 @@ export default function User() {
         <Navbar title="Dashboard" badger={state.badger_history} />
         <div className={classes.widgets}>
           {/* <Widget type="profit" /> */}
-          <div className={classes.btn_container}>
+          {/* <div className={classes.btn_container}>
             <div className={classes.btn_sub_container}>
               <button
                 className={`${classes.icon_button} ${classes.purchase}`}
@@ -100,7 +100,7 @@ export default function User() {
                 <span>Remove Medicine</span>
               </button>
             </div>
-          </div>
+          </div> */}
           <Widget type="purchase" amount={fetchData.purchase} />
           <Widget type="sales" amount={fetchData.sale} />
           <Widget type="balance" amount={totalSales} />
