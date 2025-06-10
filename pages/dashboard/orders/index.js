@@ -98,6 +98,11 @@ const Orders = () => {
     setFilteredInvoices(filtered);
   };
 
+  const handleOpen = (row) => {
+    setSelectedInvoice(row);
+    setOpen(true);
+  };
+
   const handleClose = () => {
     setOpen(false);
     setSelectedInvoice(null);
