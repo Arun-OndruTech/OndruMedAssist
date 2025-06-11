@@ -32,6 +32,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import PrintIcon from "@mui/icons-material/Print";
 import DownloadIcon from "@mui/icons-material/Download";
+import Script from "next/script";
 
 const Sales = () => {
   const [medicineData, setMedicineData] = useState([]);
@@ -259,7 +260,10 @@ const Sales = () => {
     <>
       <Head>
         <title>MedAssist | POS Sales</title>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+        <Script
+          src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+          strategy="lazyOnload"
+        ></Script>
       </Head>
       <div className={classes.main_container}>
         <Navbar title="Sales" />

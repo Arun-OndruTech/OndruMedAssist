@@ -50,7 +50,7 @@ const Items = () => {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [dispatch]);
 
   const handleFilterChange = (event) => {
     const value = event.target.value;
@@ -131,10 +131,11 @@ const Items = () => {
           ) : (
             <>
               <h2 style={{ opacity: ".5" }}>
-                You haven't added any medicine yet.
+                You haven&apos;t added any medicine yet.
               </h2>
               <span style={{ opacity: ".5", fontWeight: "500" }}>
-                Click here to add medicine – import Link from 'next/link';
+                Click here to add medicine – import Link from
+                &apos;next/link&apos;;
                 <Link href="/user/purchase-medicine/">Purchase</Link>
               </span>
             </>

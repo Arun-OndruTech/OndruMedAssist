@@ -24,10 +24,6 @@ export default function Feature() {
           axios.get(`/api/User/today?uid=${uid}`),
           axios.post("/api/Medicine/fetch", { uid }),
         ]);
-
-        console.log("✅ Today's sales:", salesRes.data);
-        console.log("📦 Total purchase data:", purchaseRes.data);
-
         setTotalSales(salesRes.data.totalSalesToday || 0);
         setTotalPurchase(purchaseRes.data.totalPurchase || 0);
       } catch (err) {
