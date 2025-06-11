@@ -5,50 +5,37 @@ import AuthProvider from "../firebase/Context/AuthContext";
 import ProtectedRoute from "../Components/ProtectedRoute/ProtectedRoute";
 import AlreadyLogin from "../Components/AlreadyLogin/AlreadyLogin";
 import { StateContextProvider } from "../Context/StateContext";
+import { useRouter } from "next/router";
 
 function MyApp({ Component, pageProps }) {
-  const pageName = Component.name;
+  const router = useRouter();
+  const path = router.pathname;
 
-  // Public Pages
-  const isLogin = pageName === "login";
-  const isSignUp = pageName === "SignUp";
-  const isHome = pageName === "Home";
+  const isHome = path === "/";
+  const isLogin = path === "/login";
+  const isSignUp = path === "/signup";
+  const isPublic = isHome || isLogin || isSignUp;
 
-  if (isHome) {
-    return (
-      <AuthProvider>
-        <StateContextProvider>
-          <AlreadyLogin>
-            <TopLayout>
-              <Component {...pageProps} />
-            </TopLayout>
-          </AlreadyLogin>
-        </StateContextProvider>
-      </AuthProvider>
-    );
-  }
-
-  if (isLogin || isSignUp) {
-    return (
-      <AuthProvider>
-        <StateContextProvider>
-          <AlreadyLogin>
-            <Component {...pageProps} />
-          </AlreadyLogin>
-        </StateContextProvider>
-      </AuthProvider>
-    );
-  }
-
-  // Protected Pages
   return (
     <AuthProvider>
       <StateContextProvider>
-        <ProtectedRoute>
-          <SideLayout>
-            <Component {...pageProps} />
-          </SideLayout>
-        </ProtectedRoute>
+        {isPublic ? (
+          <AlreadyLogin>
+            {isHome ? (
+              <TopLayout>
+                <Component {...pageProps} />
+              </TopLayout>
+            ) : (
+              <Component {...pageProps} />
+            )}
+          </AlreadyLogin>
+        ) : (
+          <ProtectedRoute>
+            <SideLayout>
+              <Component {...pageProps} />
+            </SideLayout>
+          </ProtectedRoute>
+        )}
       </StateContextProvider>
     </AuthProvider>
   );
