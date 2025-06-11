@@ -43,7 +43,7 @@ const Orders = () => {
       }
     };
     fetchInvoices();
-  }, []);
+  }, [dispatch]);
 
   const handleOpen = (invoice) => {
     setSelectedInvoice(invoice);

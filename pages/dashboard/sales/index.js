@@ -59,7 +59,7 @@ const Sales = () => {
     if (auth.currentUser) {
       fetchInventory();
     }
-  }, []);
+  }, [dispatch]);
 
   const handleAddToCart = (medicine) => {
     const existingItem = cart.find((item) => item._id === medicine._id);

@@ -68,7 +68,7 @@ const Sales = () => {
           payload: { msg: "Failed to fetch inventory", type: "error" },
         });
       });
-  }, []);
+  }, [dispatch]);
 
   // Global search functionality
   useEffect(() => {
