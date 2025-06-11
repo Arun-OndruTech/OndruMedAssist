@@ -288,6 +288,7 @@ const Sales = () => {
                     xs={12}
                     md={3}
                     className={classes.fixed_cart_container}
+                    key={medicine._id}
                   >
                     <Card className={classes.fixed_cart}>
                       <CardContent className={classes.compactContent}>
