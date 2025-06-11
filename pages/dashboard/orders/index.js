@@ -59,7 +59,7 @@ const Orders = () => {
     if (auth.currentUser) {
       fetchInvoices();
     }
-  }, []);
+  }, [dispatch]);
 
   const handleFilterChange = (event) => {
     const value = event.target.value;

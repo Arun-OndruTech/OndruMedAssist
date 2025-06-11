@@ -61,7 +61,7 @@ const Sales = () => {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [dispatch]);
 
   const handleFilterChange = (event) => {
     const value = event.target.value;

@@ -260,11 +260,11 @@ const Sales = () => {
     <>
       <Head>
         <title>MedAssist | POS Sales</title>
-        <Script
-          src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
-          strategy="lazyOnload"
-        ></Script>
       </Head>
+      <Script
+        src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+        strategy="lazyOnload"
+      ></Script>
       <div className={classes.main_container}>
         <Navbar title="Sales" />
         <div className={classes.pos_container}>
