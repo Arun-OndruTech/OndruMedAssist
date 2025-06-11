@@ -7,6 +7,7 @@ import axios from "axios";
 import { useRouter } from "next/router";
 import { useContext, useEffect, useState } from "react";
 import { auth } from "../../../firebase/firebase";
+import Link from "next/link";
 
 import { StateContext } from "../../../Context/StateContext";
 import SnackbarTag from "../../../Components/Snackbar/Snackbar";
@@ -133,10 +134,8 @@ const Items = () => {
                 You haven't added any medicine yet.
               </h2>
               <span style={{ opacity: ".5", fontWeight: "500" }}>
-                Click here to add medicine –{" "}
-                <a href="/user/purchase-medicine" style={{ color: "blue" }}>
-                  Purchase medicine
-                </a>
+                Click here to add medicine – import Link from 'next/link';
+                <Link href="/user/purchase-medicine/">Purchase</Link>
               </span>
             </>
           )}

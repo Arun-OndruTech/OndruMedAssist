@@ -10,6 +10,7 @@ import { auth } from "../../../firebase/firebase";
 import { StateContext } from "../../../Context/StateContext";
 import SnackbarTag from "../../../Components/Snackbar/Snackbar";
 import { columns } from "../../../Components/DataTabel/Purchase/Column";
+import Link from "next/link";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import {
   TextField,
@@ -157,9 +158,7 @@ const Sales = () => {
               <h2 style={{ opacity: ".5" }}>No matching medicines found.</h2>
               <span style={{ opacity: ".5", fontWeight: "500" }}>
                 Click here to add medicine –{" "}
-                <a href="/user/purchase-medicine" style={{ color: "blue" }}>
-                  Purchase medicine
-                </a>
+                <Link href="/user/purchase-medicine/">Purchase</Link>
               </span>
             </>
           )}

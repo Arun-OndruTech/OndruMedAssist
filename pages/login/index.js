@@ -8,7 +8,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import Loading from "../../Components/Loading/Loading";
 
-export default function login() {
+export default function Login() {
   const emailRef = useRef();
   const passRef = useRef();
   const [error, setError] = useState("");
