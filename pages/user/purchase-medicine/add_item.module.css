@@ -1,16 +1,19 @@
-.add_container {
-    /* border: 2px solid black; */
-    /* margin: 1em; */
+.main_container {
+    height: 100vh;
     display: flex;
     flex-direction: column;
-    /* gap: 10px; */
-    width: 100%;
-    /* padding: 10px; */
+    overflow: hidden;
+}
+
+.add_container {
+    flex: 1;
+    overflow-y: auto;
+    padding-block: 20px;
     display: flex;
     justify-content: center;
-    align-items: center;
-    height: 75%;
+    align-items: flex-start;
 }
+
 
 .container {
     display: flex;
@@ -19,8 +22,8 @@
     align-items: center;
     gap: 20px;
     width: 40%;
-    /* border: 2px solid black; */
 }
+
 
 .input {
     width: 100%;
