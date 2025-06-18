@@ -43,6 +43,7 @@ const Sales = () => {
   const { state, dispatch } = useContext(StateContext);
   const [customerName, setCustomerName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Pagination state
   const [displayCount, setDisplayCount] = useState(20);
@@ -133,6 +134,9 @@ const Sales = () => {
   };
 
   const handlePaymentSubmit = async (method) => {
+    if (isSubmitting) return; // prevent duplicate submits
+    setIsSubmitting(true);
+
     try {
       const sales = cart.map((item) => ({
         uid: auth.currentUser.uid,
@@ -145,13 +149,11 @@ const Sales = () => {
         date: new Date().toISOString(),
       }));
 
-      // Record the sale
       await axios.post("/api/Medicine/whole_sale", {
         uid: auth.currentUser.uid,
         sales,
       });
 
-      // Build the invoice object
       const invoice = {
         invoiceNumber: `INV-${uuidv4()}`,
         date: new Date(),
@@ -170,32 +172,32 @@ const Sales = () => {
         customerPhone: phoneNumber,
       };
 
-      // Save invoice to backend
       const response = await axios.post("/api/Invoice/add", {
         uid: auth.currentUser.uid,
         invoice,
       });
 
-      // Get the saved invoice from response
       const savedInvoice = response.data.invoice;
 
-      // Show success message
       dispatch({
         type: "show popup",
         payload: { msg: "Sale completed successfully", type: "success" },
       });
 
-      // Set the invoice for dialog and open it
       setSelectedInvoice(savedInvoice);
       setOpen(true);
-
-      // Reset customer info and cart
       setCustomerName("");
       setPhoneNumber("");
       setCart([]);
-
-      // Close payment dialog
       setShowPaymentDialog(false);
+
+      // ✅ Re-fetch inventory here
+      const res = await axios.post("/api/Medicine/fetch", {
+        uid: auth.currentUser.uid,
+      });
+      const availableStock = res.data.stock.filter((med) => med.quantity > 0);
+      setInventory(availableStock);
+      setFilteredMedicines(availableStock);
     } catch (error) {
       console.error("Sale error:", error);
       dispatch({
@@ -207,6 +209,8 @@ const Sales = () => {
           type: "error",
         },
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -382,7 +386,16 @@ const Sales = () => {
                       size="small"
                       fullWidth
                       value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(
+                          /[^a-zA-Z.\s]/g,
+                          ""
+                        );
+                        // Only allow alphabets, spaces, and dots for name
+                        const sanitized = value.replace(/[^a-zA-Z.\s]/g, "");
+                        setCustomerName(sanitized);
+                      }}
+                      inputProps={{ maxLength: 50 }}
                     />
                     <TextField
                       label="Phone Number"
@@ -391,7 +404,11 @@ const Sales = () => {
                       fullWidth
                       value={phoneNumber}
                       onChange={handlePhoneChange}
-                      inputProps={{ maxLength: 10 }}
+                      inputProps={{
+                        maxLength: 10,
+                        inputMode: "numeric",
+                        pattern: "[0-9]*",
+                      }}
                       error={error}
                       helperText={helperText}
                     />
@@ -657,6 +674,7 @@ const Sales = () => {
               color="primary"
               fullWidth
               sx={{ mt: 2 }}
+              disabled={isSubmitting}
             >
               Cash
             </Button>
@@ -666,6 +684,7 @@ const Sales = () => {
               color="primary"
               fullWidth
               sx={{ mt: 2 }}
+              disabled={isSubmitting}
             >
               Card
             </Button>
